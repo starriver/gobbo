@@ -1,0 +1,8 @@
+gobbo = 1
+godot = "{{ .Godot }}"
+
+[project]
+name = "{{ .Project }}"
+{{ if .Bare }}
+src = "."
+{{ end }}
