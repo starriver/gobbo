@@ -22,11 +22,11 @@ var app = cli.App{
 		cmds.Install,
 		cmds.Edit,
 		cmds.Run,
-		cmds.Export,
+		// cmds.Export,
 		cmds.Clean,
-		cmds.Add,
-		cmds.Remove,
-		cmds.Upgrade,
+		// cmds.Add,
+		// cmds.Remove,
+		// cmds.Upgrade,
 		cmds.Which,
 		cmds.Info,
 	},
@@ -53,24 +53,14 @@ func main() {
 
 	r := app.Parse(os.Args)
 
-	ok = false
 	switch r.Action {
 	case cli.Proceed:
-		ok = r.RunCommand()
-	case cli.HelpOK:
+		r.RunCommand()
+	case cli.Help:
 		r.PrintHelp()
-		ok = true
-	case cli.HelpError:
-		fmt.Fprint(os.Stderr, app.Help(os.Args[0], r.Command))
-	case cli.Fatal:
-		// Nothing else to do.
 	}
 
-	for _, err := range r.Errs {
-		glog.Error(err)
-	}
-
-	if !ok {
+	if r.Fail {
 		os.Exit(1)
 	}
 }
