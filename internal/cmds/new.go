@@ -37,7 +37,7 @@ var New = cli.Command{
 		Metavars: []string{"PROJECT"},
 	},
 
-	Run: func(r *cli.Result) bool {
+	Run: func(r *cli.Result) {
 		opts.LogSetup(r)
 
 		var path string
@@ -50,11 +50,11 @@ var New = cli.Command{
 
 		// store := opts.StoreSetup(r)
 
-		if len(r.Errs) != 0 {
-			return false
+		if r.Fail {
+			return
 		}
 
 		// return template.Generate("", "test", "4.2.2", false)
-		return true
+		return
 	},
 }

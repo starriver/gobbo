@@ -41,7 +41,7 @@ func main() {
 		panic("Failed to read build info")
 	}
 	app.Headline = fmt.Sprintf(
-		"%s v%s - CLI toolchain for Godot 4.x",
+		"%s v%s - CLI toolchain for Godot 4.x\n",
 		title,
 		bi.Main.Version,
 	)
