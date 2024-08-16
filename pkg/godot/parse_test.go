@@ -32,7 +32,7 @@ func TestOfficial(t *testing.T) {
 		if err != nil {
 			t.Errorf("Got error: \"%v\", expected %v", err, expected)
 		}
-		if *g != expected {
+		if g != expected {
 			t.Errorf("Got %v, expected %v", g, expected)
 		}
 	}
