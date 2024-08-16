@@ -6,6 +6,8 @@ import (
 
 	cli "github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/opts"
+	"gitlab.com/starriver/gobbo/pkg/godot"
+	"gitlab.com/starriver/gobbo/pkg/template"
 )
 
 const description = `
@@ -30,6 +32,12 @@ var New = cli.Command{
 		opts.Log,
 		opts.Store,
 		opts.Godot,
+		{
+			Short:    'b',
+			Long:     "bare",
+			Flag:     true,
+			Headline: "Generate gobbo.toml only",
+		},
 	},
 
 	Args: cli.Args{
@@ -50,11 +58,25 @@ var New = cli.Command{
 
 		// store := opts.StoreSetup(r)
 
+		opt := r.Options["g"]
+		var g godot.Official
+		var err error
+		if opt.IsSet {
+			g, err = godot.Parse(opt.Value)
+			if err != nil {
+				r.Error(err)
+			}
+		} else {
+			g, err = godot.CurrentRelease(false)
+			if err != nil {
+				r.Error(err)
+			}
+		}
+
 		if r.Fail {
 			return
 		}
 
-		// return template.Generate("", "test", "4.2.2", false)
-		return
+		template.Generate("", path, g, r.Options["b"].IsSet)
 	},
 }
