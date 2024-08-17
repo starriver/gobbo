@@ -1,7 +1,6 @@
 package cmds
 
 import (
-	"errors"
 	"os"
 
 	"github.com/starriver/charli"
@@ -51,15 +50,22 @@ var New = charli.Command{
 		var path string
 		if len(r.Args) == 1 {
 			path = r.Args[0]
-			if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
-				r.Errorf("project path already exists: '%s'", path)
+			_, err := os.Stat(path)
+			if !os.IsNotExist(err) {
+				if err != nil {
+					r.Errorf("couldn't stat '%s': %s", path, err)
+				} else {
+					r.Errorf("project path already exists: '%s'", path)
+				}
 			}
 		}
+
+		bare := r.Options["b"].IsSet
 
 		if r.Fail {
 			return
 		}
 
-		template.Generate("", path, godot, r.Options["b"].IsSet)
+		template.Generate("", path, godot, bare)
 	},
 }

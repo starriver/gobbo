@@ -22,8 +22,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sergi/go-diff v1.3.1 h1:xkr+Oxo4BOQKmkn/B9eMK0g5Kg/983T9DqqPHwYqD+8=
 github.com/sergi/go-diff v1.3.1/go.mod h1:aMJSSKb2lpPvRNec0+w3fl7LP9IOFzdc9Pa4NFbPK1I=
-github.com/starriver/charli v1.0.1 h1:xFt0u7QfD+qlB9xVqVYsQn/a3vqSNM/OY4YoTUvb9mc=
-github.com/starriver/charli v1.0.1/go.mod h1:vWgcMXnvCywRYLiZ3JykHnMZkjzrTWiXjRBt/xGkSmw=
+github.com/starriver/charli v1.0.2 h1:t5fQkusSprubVMGsy2H0PHPe4sM0CxKj3rO77KzWEiI=
+github.com/starriver/charli v1.0.2/go.mod h1:vWgcMXnvCywRYLiZ3JykHnMZkjzrTWiXjRBt/xGkSmw=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

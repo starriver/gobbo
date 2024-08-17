@@ -16,8 +16,7 @@ var Log = charli.Option{
 func LogSetup(r *charli.Result) {
 	opt := r.Options["l"]
 	if opt.IsSet {
-		if err := glog.ParseLevel(opt.Value); err != nil {
-			glog.Error(err)
-		}
+		// opt.Value is guaranteed valid at this point.
+		glog.ParseLevel(opt.Value)
 	}
 }

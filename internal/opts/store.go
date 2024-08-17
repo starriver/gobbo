@@ -27,6 +27,7 @@ func StoreSetup(r *charli.Result) *store.Store {
 		for _, err := range errs {
 			glog.Error(err)
 		}
+		r.Fail = true
 	}
 	return s
 }

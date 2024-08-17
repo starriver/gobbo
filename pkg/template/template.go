@@ -2,7 +2,6 @@ package template
 
 import (
 	"embed"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -23,14 +22,6 @@ func Generate(src, dest string, godot *godot.Official, bare bool) error {
 	if src != "" {
 		srcFS = os.DirFS(src)
 		srcRoot = "."
-	}
-
-	_, err := os.Stat(dest)
-	if err == nil {
-		return fmt.Errorf("project directory already exists: '%s'", dest)
-	}
-	if !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("couldn't stat '%s': %v", dest, err)
 	}
 
 	tempDir, err := os.MkdirTemp("", "gobbo-template")

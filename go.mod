@@ -6,7 +6,7 @@ require (
 	github.com/adrg/xdg v0.5.0
 	github.com/fatih/color v1.17.0
 	github.com/google/go-github/v63 v63.0.0
-	github.com/starriver/charli v1.0.1
+	github.com/starriver/charli v1.0.2
 )
 
 require (

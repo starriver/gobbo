@@ -2,7 +2,6 @@ package opts
 
 import (
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/pkg/glog"
 	"gitlab.com/starriver/gobbo/pkg/godot"
 )
 
@@ -20,12 +19,12 @@ func GodotSetup(r *charli.Result, defaultStable bool) (g *godot.Official) {
 	if opt.IsSet {
 		g, err = godot.Parse(opt.Value)
 		if err != nil {
-			glog.Error(err)
+			r.Error(err)
 		}
 	} else if defaultStable {
 		g, err = godot.CurrentRelease(false)
 		if err != nil {
-			glog.Error(err)
+			r.Error(err)
 		}
 	}
 
