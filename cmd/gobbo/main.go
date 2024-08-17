@@ -6,7 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/fatih/color"
-	cli "github.com/starriver/charli"
+	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/cmds"
 	"gitlab.com/starriver/gobbo/pkg/glog"
 )
@@ -15,9 +15,9 @@ var description = `
 If in a project directory, {COMMAND} defaults to {edit}.
 `
 
-var app = cli.App{
+var app = charli.App{
 	Description: description,
-	Commands: []cli.Command{
+	Commands: []charli.Command{
 		cmds.New,
 		cmds.Install,
 		cmds.Edit,
@@ -54,9 +54,9 @@ func main() {
 	r := app.Parse(os.Args)
 
 	switch r.Action {
-	case cli.Proceed:
+	case charli.Proceed:
 		r.RunCommand()
-	case cli.Help:
+	case charli.Help:
 		r.PrintHelp()
 	}
 

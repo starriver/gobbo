@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,7 +23,7 @@ var schema = dir{
 	},
 }
 
-func Load(path string) (store *Store, errs []error) {
+func New(path string) (store *Store, errs []error) {
 	errs = walk(schema, "")
 	if len(errs) == 0 {
 		store = &Store{path}
@@ -41,7 +42,7 @@ func walk(d dir, path string) (errs []error) {
 		os.Mkdir(path, os.ModeDir)
 	} else if !s.IsDir() {
 		errs = []error{
-			fmt.Errorf("store: '%s' should be a directory", path),
+			fmt.Errorf("'%s' should be a directory", path),
 		}
 	}
 
@@ -57,7 +58,6 @@ func walk(d dir, path string) (errs []error) {
 
 		contents, isFile := v.(string)
 		if isFile {
-			var f *os.File
 			s, err := os.Stat(subpath)
 			if err != nil {
 				if !os.IsNotExist(err) {
@@ -65,7 +65,7 @@ func walk(d dir, path string) (errs []error) {
 					continue
 				}
 
-				f, err = os.Create(subpath)
+				f, err := os.Create(subpath)
 				if err != nil {
 					errs = append(errs, err)
 					continue
@@ -76,7 +76,7 @@ func walk(d dir, path string) (errs []error) {
 			}
 
 			if s.IsDir() {
-				err := fmt.Errorf(
+				err = fmt.Errorf(
 					"expected file '%s', got directory",
 					subdir,
 				)
@@ -88,23 +88,25 @@ func walk(d dir, path string) (errs []error) {
 				continue
 			}
 
-			// TODO stream this
-			b, err := os.ReadFile(subpath)
+			// Compare file contents
+
+			want := []byte(contents)
+			f, err := os.Open(subpath)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 
-			actual := string(b)
-			if actual != (contents + "\n") {
-				err = fmt.Errorf(
-					"expected file '%s' to contain '%s', got '%s'",
-					subpath,
-					contents,
-					actual,
-				)
+			got := make([]byte, len(want)+1)
+			_, err = f.Read(got)
+			if err != nil {
 				errs = append(errs, err)
 				continue
+			}
+
+			if !bytes.Equal(want, got) {
+				err = fmt.Errorf("'%s': expected '%s', got '%s'", subpath, want, got)
+				errs = append(errs, err)
 			}
 
 			continue

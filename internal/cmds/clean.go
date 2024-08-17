@@ -1,8 +1,8 @@
 package cmds
 
-import cli "github.com/starriver/charli"
+import "github.com/starriver/charli"
 
-var Clean = cli.Command{
+var Clean = charli.Command{
 	Name:     "clean",
 	Headline: "Remove temporary files",
 }

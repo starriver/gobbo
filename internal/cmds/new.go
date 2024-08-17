@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	cli "github.com/starriver/charli"
+	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/opts"
 	"gitlab.com/starriver/gobbo/pkg/godot"
 	"gitlab.com/starriver/gobbo/pkg/template"
@@ -24,11 +24,11 @@ When using a template or example, {@} can be used to specify a ref - eg.:
   gobbo new --template github.com/user/template{@v1} templated-project
 `
 
-var New = cli.Command{
+var New = charli.Command{
 	Name:        "new",
 	Headline:    "Create a new project",
 	Description: description,
-	Options: []cli.Option{
+	Options: []charli.Option{
 		opts.Log,
 		opts.Store,
 		opts.Godot,
@@ -40,12 +40,12 @@ var New = cli.Command{
 		},
 	},
 
-	Args: cli.Args{
+	Args: charli.Args{
 		Count:    1,
 		Metavars: []string{"PROJECT"},
 	},
 
-	Run: func(r *cli.Result) {
+	Run: func(r *charli.Result) {
 		opts.LogSetup(r)
 
 		var path string
@@ -56,7 +56,7 @@ var New = cli.Command{
 			}
 		}
 
-		// store := opts.StoreSetup(r)
+		store := opts.StoreSetup(r)
 
 		opt := r.Options["g"]
 		var g godot.Official

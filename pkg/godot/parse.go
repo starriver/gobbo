@@ -8,7 +8,7 @@ import (
 
 var re *regexp.Regexp
 
-func Parse(str string) (Official, error) {
+func Parse(str string) (*Official, error) {
 	// TODO: other Godot types.
 
 	if re == nil {
@@ -20,7 +20,7 @@ func Parse(str string) (Official, error) {
 
 	match := re.FindStringSubmatch(str)
 	if match == nil {
-		return Official{}, fmt.Errorf("not a Godot version: '%s'", str)
+		return nil, fmt.Errorf("not a Godot version: '%s'", str)
 	}
 
 	minor, _ := strconv.Atoi(match[1])
@@ -33,5 +33,5 @@ func Parse(str string) (Official, error) {
 		Mono:   match[6] != "",
 	}
 
-	return godot, nil
+	return &godot, nil
 }

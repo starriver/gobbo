@@ -1,8 +1,8 @@
 package cmds
 
-import cli "github.com/starriver/charli"
+import "github.com/starriver/charli"
 
-var Info = cli.Command{
+var Info = charli.Command{
 	Name:     "info",
 	Headline: "Show version & environment information",
 }

@@ -34,15 +34,17 @@ var levelData = []struct {
 var CurrentLevel = LevelNone
 
 // Set the level from a string. Noop if an invalid level is supplied.
-func ParseLevel(str string) {
+func ParseLevel(str string) error {
 	for i, data := range levelData {
 		if str != data.str {
 			continue
 		}
 
 		CurrentLevel = Level(i)
-		return
+		return nil
 	}
+
+	return fmt.Errorf("invalid log level")
 }
 
 // Log an error.

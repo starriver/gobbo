@@ -1,8 +1,8 @@
 package cmds
 
-import cli "github.com/starriver/charli"
+import "github.com/starriver/charli"
 
-var Run = cli.Command{
+var Run = charli.Command{
 	Name:     "run",
 	Headline: "Run a project",
 }

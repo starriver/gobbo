@@ -1,8 +1,8 @@
 package cmds
 
-import cli "github.com/starriver/charli"
+import "github.com/starriver/charli"
 
-var Add = cli.Command{
+var Add = charli.Command{
 	Name:     "add",
 	Headline: "Add packages",
 }

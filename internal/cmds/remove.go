@@ -1,8 +1,8 @@
 package cmds
 
-import cli "github.com/starriver/charli"
+import "github.com/starriver/charli"
 
-var Remove = cli.Command{
+var Remove = charli.Command{
 	Name:     "remove",
 	Headline: "Remove packages",
 }

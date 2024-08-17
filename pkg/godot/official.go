@@ -108,7 +108,7 @@ func (g Official) DownloadURL(platform Platform) (url string) {
 	return
 }
 
-func CurrentRelease(latest bool) (Official, error) {
+func CurrentRelease(latest bool) (*Official, error) {
 	streamStr := "stable"
 	if latest {
 		streamStr = "latest"
@@ -133,7 +133,7 @@ func CurrentRelease(latest bool) (Official, error) {
 			"Couldn't fetch releases from repo %s/%s: %v",
 			org, repoName, err,
 		)
-		return Official{}, err
+		return nil, err
 	}
 
 	releaseTitle := releases[0].Name
@@ -142,7 +142,7 @@ func CurrentRelease(latest bool) (Official, error) {
 	official, err := Parse(*releaseTitle)
 	if err != nil {
 		glog.Errorf("Couldn't parse release '%s': %v", *releaseTitle, err)
-		return Official{}, err
+		return nil, err
 	}
 
 	return official, nil

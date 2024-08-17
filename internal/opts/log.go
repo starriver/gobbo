@@ -1,11 +1,11 @@
 package opts
 
 import (
-	cli "github.com/starriver/charli"
+	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/pkg/glog"
 )
 
-var Log = cli.Option{
+var logOpt = charli.Option{
 	Short:    'l',
 	Long:     "log-level",
 	Choices:  []string{"debug", "info", "warn", "error"},
@@ -13,9 +13,11 @@ var Log = cli.Option{
 	Headline: "Set logging level",
 }
 
-func LogSetup(r *cli.Result) {
+func logSetup(r *charli.Result) {
 	opt := r.Options["l"]
 	if opt.IsSet {
-		glog.ParseLevel(opt.Value)
+		if err := glog.ParseLevel(opt.Value); err != nil {
+			glog.Error(err)
+		}
 	}
 }
