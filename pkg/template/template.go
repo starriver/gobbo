@@ -17,7 +17,7 @@ import (
 //go:embed default/*
 var defaultTemplate embed.FS
 
-func Generate(src, dest string, godot godot.Official, bare bool) error {
+func Generate(src, dest string, godot *godot.Official, bare bool) error {
 	var srcFS fs.FS = defaultTemplate
 	srcRoot := "default"
 	if src != "" {

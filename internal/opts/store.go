@@ -7,14 +7,14 @@ import (
 	"gitlab.com/starriver/gobbo/pkg/store"
 )
 
-var storeOpt = charli.Option{
+var Store = charli.Option{
 	Short:    's',
 	Long:     "store",
 	Metavar:  "PATH",
 	Headline: "Override Gobbo store path",
 }
 
-func storeSetup(r *charli.Result) *store.Store {
+func StoreSetup(r *charli.Result) *store.Store {
 	path := xdg.DataHome
 	ro := r.Options["s"]
 	if ro.IsSet {

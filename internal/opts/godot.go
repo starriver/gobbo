@@ -6,7 +6,7 @@ import (
 	"gitlab.com/starriver/gobbo/pkg/godot"
 )
 
-var GodotOpt = charli.Option{
+var Godot = charli.Option{
 	Short:    'g',
 	Long:     "godot",
 	Metavar:  "VERSION",

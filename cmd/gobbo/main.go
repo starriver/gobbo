@@ -8,6 +8,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/cmds"
+	"gitlab.com/starriver/gobbo/internal/opts"
 	"gitlab.com/starriver/gobbo/pkg/glog"
 )
 
@@ -29,6 +30,11 @@ var app = charli.App{
 		// cmds.Upgrade,
 		cmds.Which,
 		cmds.Info,
+	},
+	GlobalOptions: []charli.Option{
+		opts.Log,
+		opts.Store,
+		opts.Godot,
 	},
 }
 

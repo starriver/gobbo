@@ -6,7 +6,6 @@ import (
 
 	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/opts"
-	"gitlab.com/starriver/gobbo/pkg/godot"
 	"gitlab.com/starriver/gobbo/pkg/template"
 )
 
@@ -29,9 +28,6 @@ var New = charli.Command{
 	Headline:    "Create a new project",
 	Description: description,
 	Options: []charli.Option{
-		opts.Log,
-		opts.Store,
-		opts.Godot,
 		{
 			Short:    'b',
 			Long:     "bare",
@@ -48,6 +44,10 @@ var New = charli.Command{
 	Run: func(r *charli.Result) {
 		opts.LogSetup(r)
 
+		//store := opts.StoreSetup(r)
+
+		godot := opts.GodotSetup(r, true)
+
 		var path string
 		if len(r.Args) == 1 {
 			path = r.Args[0]
@@ -56,27 +56,10 @@ var New = charli.Command{
 			}
 		}
 
-		store := opts.StoreSetup(r)
-
-		opt := r.Options["g"]
-		var g godot.Official
-		var err error
-		if opt.IsSet {
-			g, err = godot.Parse(opt.Value)
-			if err != nil {
-				r.Error(err)
-			}
-		} else {
-			g, err = godot.CurrentRelease(false)
-			if err != nil {
-				r.Error(err)
-			}
-		}
-
 		if r.Fail {
 			return
 		}
 
-		template.Generate("", path, g, r.Options["b"].IsSet)
+		template.Generate("", path, godot, r.Options["b"].IsSet)
 	},
 }
