@@ -105,7 +105,7 @@ func walk(d dir, path string) (errs []error) {
 			}
 
 			if !bytes.Equal(want, got) {
-				err = fmt.Errorf("'%s': expected '%s', got '%s'", subpath, want, got)
+				err = fmt.Errorf("'%s': expected '%s', got '%s'", subpath, contents, string(got))
 				errs = append(errs, err)
 			}
 
