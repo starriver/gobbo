@@ -33,6 +33,8 @@ var New = charli.Command{
 			Flag:     true,
 			Headline: "Generate gobbo.toml only",
 		},
+
+		// TODO: templates, examples.
 	},
 
 	Args: charli.Args{

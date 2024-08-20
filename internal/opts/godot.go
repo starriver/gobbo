@@ -21,7 +21,8 @@ func GodotSetup(r *charli.Result, defaultStable bool) (g *godot.Official) {
 		if err != nil {
 			r.Error(err)
 		}
-	} else if defaultStable {
+	} else if defaultStable && !r.Fail {
+		// r.Fail checked because this is expensive.
 		g, err = godot.CurrentRelease(false)
 		if err != nil {
 			r.Error(err)
