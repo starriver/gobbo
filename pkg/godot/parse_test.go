@@ -28,11 +28,11 @@ func TestBadStrings(t *testing.T) {
 
 func TestOfficial(t *testing.T) {
 	compare := func(str string, expected Official) {
-		g, err := Parse(str)
+		g, err := ParseNoStream(str)
 		if err != nil {
 			t.Errorf("Got error: \"%v\", expected %v", err, expected)
 		}
-		if g != expected {
+		if *g != expected {
 			t.Errorf("Got %v, expected %v", g, expected)
 		}
 	}

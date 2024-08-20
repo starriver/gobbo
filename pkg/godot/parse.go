@@ -9,6 +9,16 @@ import (
 var re *regexp.Regexp
 
 func Parse(str string) (*Official, error) {
+	switch str {
+	case "stable":
+		return CurrentRelease(false)
+	case "latest":
+		return CurrentRelease(true)
+	}
+	return ParseNoStream(str)
+}
+
+func ParseNoStream(str string) (*Official, error) {
 	// TODO: other Godot types.
 
 	if re == nil {
