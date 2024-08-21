@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/starriver/gobbo/pkg/platform"
 )
 
 type Store struct {
-	Root string
+	Root     string
+	Platform platform.Platform
 }
 
 type dir map[string]interface{}
@@ -25,8 +28,12 @@ var schema = dir{
 
 func New(path string) (store *Store, errs []error) {
 	errs = walk(schema, "")
+
 	if len(errs) == 0 {
-		store = &Store{path}
+		store = &Store{
+			Root:     path,
+			Platform: platform.FromRuntime(),
+		}
 	}
 	return
 }

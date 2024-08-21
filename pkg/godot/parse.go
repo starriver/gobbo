@@ -36,9 +36,13 @@ func ParseNoStream(str string) (*Official, error) {
 	minor, _ := strconv.Atoi(match[1])
 	patch, _ := strconv.Atoi(match[3]) // NOTE: will be 0 if group excluded
 
+	if minor > 255 || patch > 255 {
+		return nil, fmt.Errorf("version too high: %d.%d", minor, patch)
+	}
+
 	godot := Official{
-		Minor:  uint(minor),
-		Patch:  uint(patch),
+		Minor:  uint8(minor),
+		Patch:  uint8(patch),
 		Suffix: match[5],
 		Mono:   match[6] != "",
 	}

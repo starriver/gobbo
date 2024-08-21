@@ -37,6 +37,7 @@ func Download(url string) (string, error) {
 	// Discard the last 4KiB to be reasonably safe.
 	if offset >= 4096 {
 		offset -= 4096
+		f.Truncate(offset)
 		f.Seek(offset, io.SeekStart)
 	}
 

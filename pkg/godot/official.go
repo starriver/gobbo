@@ -7,18 +7,30 @@ import (
 
 	"github.com/google/go-github/v63/github"
 	"gitlab.com/starriver/gobbo/pkg/glog"
+	"gitlab.com/starriver/gobbo/pkg/platform"
 )
 
 type Official struct {
-	Minor  uint
-	Patch  uint
+	Minor  uint8
+	Patch  uint8
 	Suffix string
 	Mono   bool
 }
 
-func (g Official) BinaryPath() string {
+func (g Official) BinaryPath(p *platform.Platform) string {
 	str := g.String() // Heh
-	return filepath.Join("official", str, "godot-"+str)
+	path := filepath.Join("official", str, "godot-"+str)
+
+	switch p.OS {
+	case platform.MacOS:
+		return path + ".app"
+	case platform.Windows:
+		return path + ".exe"
+	}
+
+	// Linux has no extension.
+
+	return path
 }
 
 func (g Official) String() string {
@@ -56,7 +68,7 @@ const org = "godotengine"
 const stableRepo = "godot"
 const latestRepo = "godot-builds"
 
-func (g Official) DownloadURL(platform Platform) (url string) {
+func (g *Official) DownloadURL(p *platform.Platform) (url string) {
 	// TODO: use strings.Builder
 
 	url = "https://github.com/" + org + "/"
@@ -75,9 +87,20 @@ func (g Official) DownloadURL(platform Platform) (url string) {
 		url += "mono_"
 	}
 
-	switch platform {
-	case Windows:
-		url += "win64"
+	switch p.OS {
+	case platform.Windows:
+		switch p.Arch {
+		case platform.X86_32:
+			url += "win32"
+		case platform.X86_64:
+			url += "win64"
+		case platform.ARM_32:
+			// NOTE: this is anticipatory.
+			// Godot don't currently publish ARM32 Windows builds.
+			url += "windows_arm32"
+		case platform.ARM_64:
+			url += "windows_arm64"
+		}
 
 		// Sigh
 		if !g.Mono {
@@ -86,7 +109,7 @@ func (g Official) DownloadURL(platform Platform) (url string) {
 
 		url += ".zip"
 
-	case Linux:
+	case platform.Linux:
 		url += "linux"
 
 		// SIGH
@@ -96,16 +119,29 @@ func (g Official) DownloadURL(platform Platform) (url string) {
 			url += "."
 		}
 
-		url += "x86_64.zip"
+		switch p.Arch {
+		case platform.X86_32:
+			url += "x86_32"
+		case platform.X86_64:
+			url += "x86_64"
+		case platform.ARM_32:
+			url += "arm32"
+		case platform.ARM_64:
+			url += "arm64"
+		}
 
-	case MacOS:
+		url += ".zip"
+
+	case platform.MacOS:
 		url += "macos.universal.zip"
-
-	case ExportTemplates:
-		url += "export_templates.tpz"
 	}
+	// NOTE: nil purposefully missed out for ExportTemplatesURL.
 
 	return
+}
+
+func (g *Official) ExportTemplatesURL() string {
+	return g.DownloadURL(nil) + "export_templates.tpz"
 }
 
 func CurrentRelease(latest bool) (*Official, error) {
