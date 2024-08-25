@@ -20,22 +20,56 @@ func Generate(src, dest string, godot *godot.Official, bare bool) error {
 	var srcFS fs.FS = defaultTemplate
 	srcRoot := "default"
 	if src != "" {
+		if bare {
+			panic("can't use a custom template when bare is true")
+		}
+
 		srcFS = os.DirFS(src)
 		srcRoot = "."
 	}
-
-	tempDir, err := os.MkdirTemp("", "gobbo-template")
-	if err != nil {
-		return fmt.Errorf("couldn't create temporary directory: %v", err)
-	}
-	// TODO:
-	// defer os.RemoveAll(tempDir)
 
 	data := map[string]interface{}{
 		"Project": path.Base(dest),
 		"Godot":   godot.String(),
 		"Bare":    bare,
 	}
+
+	if bare {
+		f, err := os.CreateTemp("", "gobbo-template")
+		if err != nil {
+			return err
+		}
+		// Note: defer f.Close() omitted.
+		filename := f.Name()
+
+		content, err := fs.ReadFile(srcFS, "default/gobbo.toml.tmpl")
+		if err != nil {
+			// This should be all but impossible.
+			panic(err)
+		}
+
+		tmpl, err := template.New("bare").Parse(string(content))
+		if err != nil {
+			// Again, the default template must be valid, so this should be
+			// impossible.
+			panic(err)
+		}
+
+		err = tmpl.Execute(f, data)
+		f.Close()
+		if err != nil {
+			return err
+		}
+
+		err = os.Rename(filename, dest)
+		return err
+	}
+
+	tempDir, err := os.MkdirTemp("", "gobbo-template")
+	if err != nil {
+		return fmt.Errorf("couldn't create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
 
 	err = fs.WalkDir(srcFS, srcRoot, func(srcPath string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -96,7 +130,8 @@ func Generate(src, dest string, godot *godot.Official, bare bool) error {
 		}
 
 		// Now actually template the file.
-		if err = tmpl.Execute(destFile, data); err != nil {
+		err = tmpl.Execute(destFile, data)
+		if err != nil {
 			return err
 		}
 
