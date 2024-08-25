@@ -6,6 +6,7 @@ require (
 	github.com/adrg/xdg v0.5.0
 	github.com/fatih/color v1.17.0
 	github.com/google/go-github/v63 v63.0.0
+	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/schollz/progressbar/v3 v3.14.6
 	github.com/starriver/charli v1.0.2
 )

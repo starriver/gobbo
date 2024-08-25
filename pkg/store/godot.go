@@ -5,12 +5,61 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gitlab.com/starriver/gobbo/pkg/download"
 	"gitlab.com/starriver/gobbo/pkg/glog"
 	"gitlab.com/starriver/gobbo/pkg/godot"
 	"gitlab.com/starriver/gobbo/pkg/platform"
 )
+
+func streamString(latest bool) string {
+	if latest {
+		return "latest"
+	}
+	return "stable"
+}
+
+func (s *Store) CachedGodotRelease(latest bool) (*godot.Official, error) {
+	path := s.Join("cache", streamString(latest))
+
+	st, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if st.ModTime().AddDate(0, 0, 1).Before(time.Now()) {
+		// Cache is too old.
+		return nil, nil
+	}
+
+	// The cache files should be tiny, so this should be fine.
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(b) == 0 {
+		// Not written yet.
+		return nil, nil
+	}
+
+	str := string(b[:len(b)-1]) // Trim newline
+	return godot.Parse(str)
+}
+
+func (s *Store) SetCachedGodotRelease(latest bool, g *godot.Official) error {
+	path := s.Join("cache", streamString(latest))
+
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(g.String() + "\n") // POSIXly correct
+	return err
+}
 
 func (s *Store) DownloadGodot(g *godot.Official) error {
 	url := g.DownloadURL(&s.Platform)
@@ -40,7 +89,7 @@ func (s *Store) DownloadGodot(g *godot.Official) error {
 		return err
 	}
 
-	dest := filepath.Join(s.Root, g.String())
+	dest := s.Join("bin", "official", g.String())
 	err = os.Rename(tmp, dest)
 	if err != nil {
 		return err

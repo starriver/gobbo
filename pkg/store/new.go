@@ -9,23 +9,6 @@ import (
 	"gitlab.com/starriver/gobbo/pkg/platform"
 )
 
-type Store struct {
-	Root     string
-	Platform platform.Platform
-}
-
-type dir map[string]interface{}
-
-// Blank string means "a file should exist here".
-// Non-blank string means "a file should exist here with these contents".
-var schema = dir{
-	"version":       "1",
-	"release-cache": "",
-	"bin": dir{
-		"official": dir{},
-	},
-}
-
 func New(path string) (store *Store, errs []error) {
 	errs = walk(schema, "")
 
