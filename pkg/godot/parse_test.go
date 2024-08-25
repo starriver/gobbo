@@ -16,6 +16,8 @@ func TestBadStrings(t *testing.T) {
 		"src:remote@",
 		"src:remote#",
 		"src:remote@#",
+		"stable",
+		"latest",
 	}
 
 	for _, str := range bad {
@@ -28,7 +30,7 @@ func TestBadStrings(t *testing.T) {
 
 func TestOfficial(t *testing.T) {
 	compare := func(str string, expected Official) {
-		g, err := ParseNoStream(str)
+		g, err := Parse(str)
 		if err != nil {
 			t.Errorf("Got error: \"%v\", expected %v", err, expected)
 		}

@@ -45,9 +45,9 @@ var New = charli.Command{
 	Run: func(r *charli.Result) {
 		opts.LogSetup(r)
 
-		//store := opts.StoreSetup(r)
+		store := opts.StoreSetup(r)
 
-		godot := opts.GodotSetup(r, true)
+		godot := opts.GodotSetup(r, store, true)
 
 		var path string
 		if len(r.Args) == 1 {

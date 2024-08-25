@@ -9,17 +9,11 @@ import (
 var re *regexp.Regexp
 
 func Parse(str string) (*Official, error) {
-	switch str {
-	case "stable":
-		return CurrentRelease(false)
-	case "latest":
-		return CurrentRelease(true)
-	}
-	return ParseNoStream(str)
-}
-
-func ParseNoStream(str string) (*Official, error) {
 	// TODO: other Godot types.
+
+	if IsStream(str) {
+		return nil, fmt.Errorf("stream '%s' not allowed here", str)
+	}
 
 	if re == nil {
 		re = regexp.MustCompile(
@@ -48,4 +42,18 @@ func ParseNoStream(str string) (*Official, error) {
 	}
 
 	return &godot, nil
+}
+
+func IsStream(str string) bool {
+	return str == "stable" || str == "latest"
+}
+
+func ParseWithStream(str string, ignoreStream bool) (*Official, error) {
+	if IsStream(str) {
+		if ignoreStream {
+			return nil, nil
+		}
+		return CurrentRelease(str == "latest")
+	}
+	return Parse(str)
 }
