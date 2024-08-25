@@ -16,9 +16,9 @@ var Store = charli.Option{
 
 func StoreSetup(r *charli.Result) *store.Store {
 	path := xdg.DataHome
-	ro := r.Options["s"]
-	if ro.IsSet {
-		path = ro.Value
+	opt := r.Options["s"]
+	if opt.IsSet {
+		path = opt.Value
 	}
 
 	s, errs := store.New(path)

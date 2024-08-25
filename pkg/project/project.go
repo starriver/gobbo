@@ -14,7 +14,7 @@ type Project struct {
 	Src   string
 }
 
-func Load(path string, ignoreStream bool) (p Project, errs []error) {
+func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	var err error
 	f, err := os.Open(path)
 	if err != nil {
@@ -49,6 +49,8 @@ func Load(path string, ignoreStream bool) (p Project, errs []error) {
 
 	err = toml.NewDecoder(f).Decode(&t)
 	pushError(err)
+
+	p = &Project{}
 
 	var str string
 	v, ok := pop("godot")

@@ -5,10 +5,10 @@ import (
 
 	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/opts"
-	"gitlab.com/starriver/gobbo/pkg/template"
+	"gitlab.com/starriver/gobbo/pkg/project"
 )
 
-const description = `
+const newDesc = `
 Scaffolds a new project in {PROJECT}/. {PROJECT}/ must not already exist -
 unless {-b/--bare} is supplied, in which case only a project config file will
 be generated at {PROJECT}/gobbo.toml.
@@ -25,7 +25,7 @@ When using a template or example, {@} can be used to specify a ref - eg.:
 var New = charli.Command{
 	Name:        "new",
 	Headline:    "Create a new project",
-	Description: description,
+	Description: newDesc,
 	Options: []charli.Option{
 		{
 			Short:    'b',
@@ -68,6 +68,6 @@ var New = charli.Command{
 			return
 		}
 
-		template.Generate("", path, godot, bare)
+		project.Generate("", path, godot, bare)
 	},
 }

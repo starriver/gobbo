@@ -1,4 +1,4 @@
-package template
+package project
 
 import (
 	"embed"
@@ -13,12 +13,12 @@ import (
 	"gitlab.com/starriver/gobbo/pkg/godot"
 )
 
-//go:embed default/*
+//go:embed template/*
 var defaultTemplate embed.FS
 
 func Generate(src, dest string, godot *godot.Official, bare bool) error {
 	var srcFS fs.FS = defaultTemplate
-	srcRoot := "default"
+	srcRoot := "template"
 	if src != "" {
 		if bare {
 			panic("can't use a custom template when bare is true")
