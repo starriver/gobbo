@@ -13,6 +13,16 @@ import (
 	"gitlab.com/starriver/gobbo/pkg/platform"
 )
 
+func (s *Store) IsGodotInstalled(g *godot.Official) (bool, error) {
+	_, err := os.Stat(s.Join("bin", g.BinaryPath(&s.Platform)))
+	if os.IsNotExist(err) {
+		return false, nil
+	} else if err == nil {
+		return true, nil
+	}
+	return false, err
+}
+
 func streamString(latest bool) string {
 	if latest {
 		return "latest"
@@ -61,7 +71,7 @@ func (s *Store) SetCachedGodotRelease(latest bool, g *godot.Official) error {
 	return err
 }
 
-func (s *Store) DownloadGodot(g *godot.Official) error {
+func (s *Store) InstallGodot(g *godot.Official) error {
 	url := g.DownloadURL(&s.Platform)
 
 	zip, err := download.Download(url)
@@ -90,6 +100,16 @@ func (s *Store) DownloadGodot(g *godot.Official) error {
 	}
 
 	dest := s.Join("bin", "official", g.String())
+	_, err = os.Stat(dest)
+	if err == nil {
+		err = os.RemoveAll(dest)
+		if err != nil {
+			return err
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
 	err = os.Rename(tmp, dest)
 	if err != nil {
 		return err

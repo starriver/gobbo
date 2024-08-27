@@ -17,6 +17,6 @@ func LogSetup(r *charli.Result) {
 	opt := r.Options["l"]
 	if opt.IsSet {
 		// opt.Value is guaranteed valid at this point.
-		glog.ParseLevel(opt.Value)
+		_ = glog.ParseLevel(opt.Value)
 	}
 }

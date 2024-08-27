@@ -1,11 +1,9 @@
 package cmds
 
 import (
-	"os"
-
 	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/opts"
-	"gitlab.com/starriver/gobbo/pkg/project"
+	"gitlab.com/starriver/gobbo/pkg/glog"
 )
 
 const installDesc = `
@@ -47,27 +45,28 @@ var Install = charli.Command{
 
 		store := opts.StoreSetup(r)
 
-		godot := opts.GodotSetup(r, store, true)
+		_, godot := opts.ProjectGodotSetup(r, store, false)
 
-		var path string
-		if len(r.Args) == 1 {
-			path = r.Args[0]
-			_, err := os.Stat(path)
-			if !os.IsNotExist(err) {
-				if err != nil {
-					r.Errorf("couldn't stat '%s': %s", path, err)
-				} else {
-					r.Errorf("project path already exists: '%s'", path)
-				}
-			}
-		}
-
-		bare := r.Options["b"].IsSet
+		noCache := r.Options["n"].IsSet
 
 		if r.Fail {
 			return
 		}
 
-		project.Generate("", path, godot, bare)
+		installed, err := store.IsGodotInstalled(godot)
+		if err != nil {
+			r.Error(err)
+			return
+		}
+
+		if installed && !noCache {
+			glog.Infof("Godot %s already installed.", godot.String())
+			return
+		}
+
+		err = store.InstallGodot(godot)
+		if err != nil {
+			r.Error(err)
+		}
 	},
 }
