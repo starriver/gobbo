@@ -45,7 +45,7 @@ var Install = charli.Command{
 
 		store := opts.StoreSetup(r)
 
-		_, godot := opts.ProjectGodotSetup(r, store, false)
+		_, godot := opts.ProjectGodotSetup(r, store, opts.Never, false)
 
 		noCache := r.Options["n"].IsSet
 

@@ -1,6 +1,8 @@
 package opts
 
 import (
+	"path/filepath"
+
 	"github.com/adrg/xdg"
 	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/pkg/glog"
@@ -15,10 +17,15 @@ var Store = charli.Option{
 }
 
 func StoreSetup(r *charli.Result) *store.Store {
-	path := xdg.DataHome
+	path := filepath.Join(xdg.DataHome, "gobbo")
 	opt := r.Options["s"]
 	if opt.IsSet {
 		path = opt.Value
+	}
+
+	if r.Fail {
+		// Short-circuit store creation/walking
+		return nil
 	}
 
 	s, errs := store.New(path)

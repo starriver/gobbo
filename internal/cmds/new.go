@@ -47,7 +47,7 @@ var New = charli.Command{
 
 		store := opts.StoreSetup(r)
 
-		godot := opts.GodotSetup(r, store, true)
+		godot := opts.GodotSetup(r, store, opts.Never, true)
 
 		var path string
 		if len(r.Args) == 1 {

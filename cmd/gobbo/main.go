@@ -36,6 +36,9 @@ var app = charli.App{
 		opts.Store,
 		opts.Godot,
 	},
+	ErrorHandler: func(err error) {
+		glog.Error(err)
+	},
 }
 
 func main() {

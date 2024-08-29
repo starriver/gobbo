@@ -10,7 +10,7 @@ import (
 )
 
 func New(path string) (store *Store, errs []error) {
-	errs = walk(schema, "")
+	errs = walk(schema, path)
 
 	if len(errs) == 0 {
 		store = &Store{
@@ -29,7 +29,7 @@ func walk(d dir, path string) (errs []error) {
 			return
 		}
 
-		os.Mkdir(path, os.ModeDir)
+		os.Mkdir(path, os.ModePerm)
 	} else if !s.IsDir() {
 		errs = []error{
 			fmt.Errorf("'%s' should be a directory", path),
@@ -47,6 +47,7 @@ func walk(d dir, path string) (errs []error) {
 		}
 
 		contents, isFile := v.(string)
+
 		if isFile {
 			s, err := os.Stat(subpath)
 			if err != nil {
@@ -61,7 +62,7 @@ func walk(d dir, path string) (errs []error) {
 					continue
 				}
 
-				f.WriteString(contents)
+				f.WriteString(contents + "\n") // POSIX
 				continue
 			}
 
@@ -79,6 +80,8 @@ func walk(d dir, path string) (errs []error) {
 			}
 
 			// Compare file contents
+
+			contents += "\n" // POSIX
 
 			want := []byte(contents)
 			f, err := os.Open(subpath)

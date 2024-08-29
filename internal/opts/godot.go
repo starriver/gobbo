@@ -13,7 +13,15 @@ var Godot = charli.Option{
 	Headline: "Specify Godot version",
 }
 
-func GodotSetup(r *charli.Result, s *store.Store, defaultStable bool) (g *godot.Official) {
+type InstallMode uint8
+
+const (
+	Never InstallMode = iota
+	IfAbsent
+	Always
+)
+
+func GodotSetup(r *charli.Result, s *store.Store, mode InstallMode, defaultStable bool) (g *godot.Official) {
 	opt := r.Options["g"]
 
 	var err error
@@ -29,5 +37,37 @@ func GodotSetup(r *charli.Result, s *store.Store, defaultStable bool) (g *godot.
 		}
 	}
 
+	InstallGodot(r, s, g, mode)
 	return
+}
+
+func InstallGodot(r *charli.Result, s *store.Store, g *godot.Official, mode InstallMode) {
+	if r.Fail {
+		return
+	}
+
+	switch mode {
+	case Never:
+		// Nothing to do,
+
+	case IfAbsent:
+		if s == nil {
+			break
+		}
+
+		isInstalled, err := s.IsGodotInstalled(g)
+		if err != nil {
+			r.Error(err)
+			break
+		}
+		if !isInstalled {
+			s.InstallGodot(g)
+		}
+
+	case Always:
+		err := s.InstallGodot(g)
+		if err != nil {
+			r.Error(err)
+		}
+	}
 }

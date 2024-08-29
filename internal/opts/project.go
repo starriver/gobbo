@@ -66,7 +66,12 @@ func ProjectSetup(r *charli.Result, required bool) *project.Project {
 	return p
 }
 
-func ProjectGodotSetup(r *charli.Result, store *store.Store, projectRequired bool) (p *project.Project, g *godot.Official) {
+func ProjectGodotSetup(
+	r *charli.Result,
+	s *store.Store,
+	mode InstallMode,
+	projectRequired bool,
+) (p *project.Project, g *godot.Official) {
 	pOpt := r.Options["p"]
 	gOpt := r.Options["g"]
 
@@ -89,9 +94,10 @@ func ProjectGodotSetup(r *charli.Result, store *store.Store, projectRequired boo
 	}
 
 	if gOpt.IsSet {
-		g = GodotSetup(r, store, false)
+		g = GodotSetup(r, s, mode, false)
 	} else if p != nil {
 		g = p.Godot
+		InstallGodot(r, s, g, mode)
 	} else {
 		glog.Error("no project or Godot version supplied.")
 		glog.Error(
