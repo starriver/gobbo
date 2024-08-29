@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gitlab.com/starriver/gobbo/pkg/platform"
 )
@@ -90,7 +91,7 @@ func walk(d dir, path string) (errs []error) {
 				continue
 			}
 
-			got := make([]byte, len(want)+1)
+			got := make([]byte, len(want))
 			_, err = f.Read(got)
 			if err != nil {
 				errs = append(errs, err)
@@ -98,7 +99,12 @@ func walk(d dir, path string) (errs []error) {
 			}
 
 			if !bytes.Equal(want, got) {
-				err = fmt.Errorf("'%s': expected '%s', got '%s'", subpath, contents, string(got))
+				err = fmt.Errorf(
+					"'%s': expected '%s', got '%s'",
+					subpath,
+					contents[:len(contents)-1],
+					strings.Trim(string(got), " \n"),
+				)
 				errs = append(errs, err)
 			}
 

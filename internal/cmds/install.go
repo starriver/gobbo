@@ -24,6 +24,7 @@ var Install = charli.Command{
 	Headline:    "Install Godot & packages",
 	Description: installDesc,
 	Options: []charli.Option{
+		opts.Project,
 		{
 			Short:    'e',
 			Long:     "export-templates",

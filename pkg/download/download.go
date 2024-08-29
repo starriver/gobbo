@@ -17,7 +17,7 @@ const prefix = "gobbo-download-"
 
 func Download(url string) (string, error) {
 	hash := sha256.Sum256([]byte(url))
-	b64 := base64.StdEncoding.EncodeToString(hash[:])
+	b64 := base64.URLEncoding.EncodeToString(hash[:])
 	tmp := filepath.Join(os.TempDir(), prefix+b64)
 
 	var offset int64
@@ -58,7 +58,7 @@ func Download(url string) (string, error) {
 		return "", fmt.Errorf("GET %s: %s", url, res.Status)
 	}
 
-	bar := progressbar.DefaultBytes(offset + res.Request.ContentLength)
+	bar := progressbar.DefaultBytes(offset + res.ContentLength)
 	err = bar.Set64(offset)
 	if err != nil {
 		glog.Warnf("couldn't set progress bar position: %v", err)

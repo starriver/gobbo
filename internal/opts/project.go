@@ -31,7 +31,7 @@ func ProjectSetup(r *charli.Result, required bool) *project.Project {
 			if os.IsNotExist(err) {
 				if required || opt.IsSet {
 					r.Errorf(
-						"not a Gobbo project directory or config file: '%s'",
+						"no Gobbo project directory or config file at '%s'",
 						path,
 					)
 				}
@@ -51,7 +51,7 @@ func ProjectSetup(r *charli.Result, required bool) *project.Project {
 	// If this is a directory, change the path to the config file and check
 	// again
 	if st.IsDir() {
-		path = filepath.Join("gobbo.toml")
+		path = filepath.Join(path, "gobbo.toml")
 		_, ok = checkPath()
 		if !ok {
 			return nil

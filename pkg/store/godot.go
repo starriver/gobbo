@@ -79,7 +79,7 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 		return err
 	}
 
-	tmp, err := os.MkdirTemp("", "gobbo-extract-")
+	tmp, err := os.MkdirTemp("", "gobbo-extract-*")
 	if err != nil {
 		return err
 	}
