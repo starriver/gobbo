@@ -135,7 +135,7 @@ func normalize(s *Store, g *godot.Official, tmp string) error {
 			}
 
 			from := filepath.Join(tmp, f.Name())
-			to := filepath.Join(tmp, g.String())
+			to := filepath.Join(tmp, fmt.Sprintf("godot-%s", g.String()))
 			err = os.Rename(from, to)
 			if err != nil {
 				return err
@@ -160,7 +160,7 @@ func normalize(s *Store, g *godot.Official, tmp string) error {
 		}
 
 		from := filepath.Join(tmp, dir[0].Name())
-		to := filepath.Join(tmp, g.String()+".app")
+		to := filepath.Join(tmp, fmt.Sprintf("godot-%s.app", g.String()))
 		err = os.Rename(from, to)
 		if err != nil {
 			return err
@@ -179,10 +179,13 @@ func normalize(s *Store, g *godot.Official, tmp string) error {
 			from := filepath.Join(tmp, n)
 			var to string
 			if strings.HasSuffix(n, "_console.exe") {
-				to = filepath.Join(tmp, g.String()+"_console.exe")
+				to = filepath.Join(
+					tmp,
+					fmt.Sprintf("godot-%s_console.exe", g.String()),
+				)
 				okConsole = true
 			} else {
-				to = filepath.Join(tmp, g.String()+".exe")
+				to = filepath.Join(tmp, fmt.Sprintf("godot-%s.exe", g.String()))
 				okNormal = true
 			}
 
