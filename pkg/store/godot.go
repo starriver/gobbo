@@ -49,12 +49,13 @@ func (s *Store) CachedGodotRelease(latest bool) (*godot.Official, error) {
 		return nil, err
 	}
 
-	if len(b) == 0 {
-		// Not written yet.
+	if len(b) < 2 {
+		// Not written yet. Single rune is newline.
 		return nil, nil
 	}
 
 	str := string(b[:len(b)-1]) // Trim newline
+	glog.Infof("using Godot %s", str)
 	return godot.Parse(str)
 }
 

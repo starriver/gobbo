@@ -5,6 +5,7 @@ import (
 
 	"github.com/starriver/charli"
 	"gitlab.com/starriver/gobbo/internal/opts"
+	"gitlab.com/starriver/gobbo/pkg/glog"
 	"gitlab.com/starriver/gobbo/pkg/project"
 )
 
@@ -45,10 +46,6 @@ var New = charli.Command{
 	Run: func(r *charli.Result) {
 		opts.LogSetup(r)
 
-		store := opts.StoreSetup(r)
-
-		godot := opts.GodotSetup(r, store, opts.Never, true)
-
 		var path string
 		if len(r.Args) == 1 {
 			path = r.Args[0]
@@ -62,6 +59,10 @@ var New = charli.Command{
 			}
 		}
 
+		store := opts.StoreSetup(r)
+
+		godot := opts.GodotSetup(r, store, opts.Never, true)
+
 		bare := r.Options["b"].IsSet
 
 		if r.Fail {
@@ -69,5 +70,7 @@ var New = charli.Command{
 		}
 
 		project.Generate("", path, godot, bare)
+
+		glog.Infof("created '%s'", path)
 	},
 }

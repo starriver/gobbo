@@ -2,6 +2,7 @@ package opts
 
 import (
 	"github.com/starriver/charli"
+	"gitlab.com/starriver/gobbo/pkg/glog"
 	"gitlab.com/starriver/gobbo/pkg/godot"
 	"gitlab.com/starriver/gobbo/pkg/store"
 )
@@ -22,18 +23,34 @@ const (
 )
 
 func GodotSetup(r *charli.Result, s *store.Store, mode InstallMode, defaultStable bool) (g *godot.Official) {
+	var err error
+
 	opt := r.Options["g"]
 
-	var err error
-	if opt.IsSet {
-		g, err = godot.ParseWithStream(opt.Value, r.Fail)
+	isStream := godot.IsStream(opt.Value) || (!opt.IsSet && defaultStable)
+	isLatest := opt.Value == "latest"
+	if isStream {
+		g, err = s.CachedGodotRelease(isLatest)
 		if err != nil {
-			r.Error(err)
+			glog.Warnf("couldn't check for cached release: %v", err)
 		}
-	} else if defaultStable && !r.Fail {
-		g, err = godot.CurrentRelease(false)
-		if err != nil {
-			r.Error(err)
+	}
+
+	if g == nil {
+		if opt.IsSet {
+			g, err = godot.ParseWithStream(opt.Value, r.Fail)
+			if err != nil {
+				r.Error(err)
+			}
+		} else if defaultStable && !r.Fail {
+			g, err = godot.CurrentRelease(false)
+			if err != nil {
+				r.Error(err)
+			}
+		}
+
+		if g != nil && isStream {
+			s.SetCachedGodotRelease(opt.Value == "latest", g)
 		}
 	}
 

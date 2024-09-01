@@ -7,8 +7,6 @@ import (
 )
 
 const installDesc = `
-Install Godot and packages
-
 Installs the relevant Godot version and packages for the given project.
 
 Alternatively, {-g}/{--godot} can also be used to install an arbitrary Godot

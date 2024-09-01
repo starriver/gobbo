@@ -19,7 +19,7 @@ type Official struct {
 
 func (g Official) BinaryPath(p *platform.Platform) string {
 	str := g.String() // Heh
-	path := filepath.Join("official", str, "godot-"+str)
+	path := filepath.Join("official", str, fmt.Sprintf("godot-%s", str))
 
 	switch p.OS {
 	case platform.MacOS:
@@ -149,14 +149,14 @@ func CurrentRelease(latest bool) (*Official, error) {
 	if latest {
 		streamStr = "latest"
 	}
-	glog.Infof("Checking %s Godot release...", streamStr)
+	glog.Infof("checking %s Godot release...", streamStr)
 
 	repoName := stableRepo
 	if latest {
 		repoName = latestRepo
 	}
 
-	glog.Debugf("Fetching releases from repo %s/%s", org, repoName)
+	glog.Debugf("fetching releases from repo %s/%s", org, repoName)
 	client := github.NewClient(nil)
 	releases, _, err := client.Repositories.ListReleases(
 		context.Background(),
@@ -166,20 +166,21 @@ func CurrentRelease(latest bool) (*Official, error) {
 	)
 	if err != nil {
 		glog.Errorf(
-			"Couldn't fetch releases from repo %s/%s: %v",
+			"couldn't fetch releases from repo %s/%s: %v",
 			org, repoName, err,
 		)
 		return nil, err
 	}
 
 	releaseTitle := releases[0].Name
-	glog.Debugf("First release is: '%s'", *releaseTitle)
+	glog.Debugf("first release is: '%s'", *releaseTitle)
 
 	official, err := Parse(*releaseTitle)
 	if err != nil {
-		glog.Errorf("Couldn't parse release '%s': %v", *releaseTitle, err)
+		glog.Errorf("couldn't parse release '%s': %v", *releaseTitle, err)
 		return nil, err
 	}
 
+	glog.Infof("=> %s", official.String())
 	return official, nil
 }

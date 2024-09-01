@@ -34,10 +34,15 @@ func Parse(str string) (*Official, error) {
 		return nil, fmt.Errorf("version too high: %d.%d", minor, patch)
 	}
 
+	suffix := match[5]
+	if suffix == "stable" {
+		suffix = ""
+	}
+
 	godot := Official{
 		Minor:  uint8(minor),
 		Patch:  uint8(patch),
-		Suffix: match[5],
+		Suffix: suffix,
 		Mono:   match[6] != "",
 	}
 

@@ -72,25 +72,25 @@ func ProjectGodotSetup(
 	mode InstallMode,
 	projectRequired bool,
 ) (p *project.Project, g *godot.Official) {
-	pOpt := r.Options["p"]
+	// pOpt := r.Options["p"]
 	gOpt := r.Options["g"]
 
 	p = ProjectSetup(r, projectRequired)
 	if p == nil {
 		// Special error for when a Godot version is required and the (implicit)
 		// project dir failed to load
-		if !pOpt.IsSet && (projectRequired || !gOpt.IsSet) {
-			glog.Error("this doesn't look like a Gobbo project directory.")
-			godotMention := ""
-			if !projectRequired {
-				godotMention = " or -g/--godot"
-			}
-			glog.Errorf(
-				"change to a project directory, or use -p/--project%s.",
-				godotMention,
-			)
-			r.Fail = true
-		}
+		// if !pOpt.IsSet && (projectRequired || !gOpt.IsSet) {
+		// 	glog.Error("this doesn't look like a Gobbo project directory.")
+		// 	godotMention := ""
+		// 	if !projectRequired {
+		// 		godotMention = " or -g/--godot"
+		// 	}
+		// 	glog.Errorf(
+		// 		"change to a project directory, or use -p/--project%s.",
+		// 		godotMention,
+		// 	)
+		// 	r.Fail = true
+		// }
 	}
 
 	if gOpt.IsSet {
