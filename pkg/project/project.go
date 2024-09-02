@@ -74,16 +74,14 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	}
 
 	if ok {
-		pg := filepath.Join(filepath.Dir(path), str, "project.godot")
-		_, err := os.Stat(pg)
+		p.Src = filepath.Join(filepath.Dir(path), str)
+		_, err := os.Stat(p.GodotConfigPath())
 		if err != nil {
 			if os.IsNotExist(err) {
 				pushErrorf("src '%s' doesn't exist", str)
 			} else {
 				errs = append(errs, err)
 			}
-		} else {
-			p.Src = str
 		}
 	}
 
@@ -93,4 +91,8 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	}
 
 	return
+}
+
+func (p *Project) GodotConfigPath() string {
+	return filepath.Join(p.Src, "project.godot")
 }

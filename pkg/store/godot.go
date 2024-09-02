@@ -73,6 +73,7 @@ func (s *Store) SetCachedGodotRelease(latest bool, g *godot.Official) error {
 }
 
 func (s *Store) InstallGodot(g *godot.Official) error {
+	glog.Infof("downloading Godot %s...", g.String())
 	url := g.DownloadURL(&s.Platform)
 
 	zip, err := download.Download(url)
@@ -85,6 +86,7 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 		return err
 	}
 
+	glog.Info("extracting...")
 	err = download.Unzip(zip, tmp)
 	if err != nil {
 		return err

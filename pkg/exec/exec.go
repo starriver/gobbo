@@ -49,11 +49,12 @@ func Runway(binPath string, args []string) error {
 		done <- cmd.Wait()
 	}()
 
-	timer := time.NewTimer(3 * time.Second)
+	timer := time.NewTimer(2 * time.Second)
 
 	select {
 	case <-timer.C:
 		cmd.Process.Release()
+		glog.Debug("Godot seems OK, exiting")
 		return nil
 	case <-done:
 		// Process exited.
