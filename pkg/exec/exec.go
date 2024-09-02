@@ -67,5 +67,8 @@ func Runway(binPath string, args []string) error {
 }
 
 func execStr(binPath string, args []string) string {
+	if len(args) == 0 {
+		return fmt.Sprintf("'%s'", binPath)
+	}
 	return fmt.Sprintf("'%s' '%s'", binPath, strings.Join(args, "' '"))
 }

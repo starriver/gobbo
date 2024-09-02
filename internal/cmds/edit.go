@@ -13,7 +13,7 @@ current directory, use {-p}/{--project}.
 
 Unless {-n}/{--no-install} is supplied, {gobbo install} will run first.
 
-Extraneous arguments will be passed to Godot. Use {++} to prevent Gobbo
+Extraneous arguments will be passed to Godot. Use {--} to prevent Gobbo
 parsing flags.
 
 Unless {-f}/{--foreground} is supplied, the editor will run in the background
@@ -75,11 +75,6 @@ var Edit = charli.Command{
 		)
 
 		if r.Options["f"].IsSet {
-			glog.Infof(
-				"Running Godot %s editor in the foreground...",
-				godot.String(),
-			)
-
 			exec.Execv(bin, args)
 			panic("Should be unreachable")
 		}
