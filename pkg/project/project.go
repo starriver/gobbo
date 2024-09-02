@@ -96,3 +96,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 func (p *Project) GodotConfigPath() string {
 	return filepath.Join(p.Src, "project.godot")
 }
+
+func (p *Project) GodotCachePath() string {
+	return filepath.Join(p.Src, ".godot")
+}
