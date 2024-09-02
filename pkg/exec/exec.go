@@ -1,7 +1,6 @@
 package exec
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -35,9 +34,18 @@ func Runway(binPath string, args []string) error {
 
 	cmd := exec.Command(binPath, args...)
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	// On Linux, Godot can start behaving very weirdly if its pipes to stdout
+	// or stderr are broken. So, just give it tempfiles.
+	stdout, err := os.CreateTemp("", "gobbo-runway-*")
+	if err != nil {
+		return err
+	}
+	stderr, err := os.CreateTemp("", "gobbo-runway-*")
+	if err != nil {
+		return err
+	}
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
 	if err := cmd.Start(); err != nil {
 		glog.Errorf("Couldn't execute %s: %v", es, err)
@@ -55,14 +63,38 @@ func Runway(binPath string, args []string) error {
 	case <-timer.C:
 		cmd.Process.Release()
 		glog.Debug("Godot seems OK, exiting")
+		// Note that the stdout/stderr tempfiles will unfortunately remain.
 		return nil
 	case <-done:
 		// Process exited.
 	}
 
 	glog.Errorf("Exited %d from '%s'. Output:", cmd.ProcessState.ExitCode(), es)
-	fmt.Fprint(os.Stdout, stdout)
-	fmt.Fprint(os.Stderr, stderr)
+
+	displayAndClose := func(from, to *os.File) error {
+		_, err := from.Seek(0, 0)
+		if err != nil {
+			return err
+		}
+		_, err = to.ReadFrom(from)
+		if err != nil {
+			return err
+		}
+		err = from.Close()
+		if err != nil {
+			return err
+		}
+		err = os.Remove(from.Name())
+		if err != nil {
+			glog.Warn(err)
+		}
+
+		return nil
+	}
+
+	displayAndClose(stdout, os.Stdout)
+	displayAndClose(stderr, os.Stderr)
+
 	return errors.New("process exited too fast")
 }
 
