@@ -149,38 +149,49 @@ func CurrentRelease(latest bool) (*Official, error) {
 	if latest {
 		streamStr = "latest"
 	}
-	glog.Infof("checking %s Godot release...", streamStr)
+	glog.Infof("Checking %s Godot release...", streamStr)
 
 	repoName := stableRepo
 	if latest {
 		repoName = latestRepo
 	}
 
-	glog.Debugf("fetching releases from repo %s/%s", org, repoName)
+	glog.Debugf("Fetching releases from repo '%s/%s'", org, repoName)
 	client := github.NewClient(nil)
 	releases, _, err := client.Repositories.ListReleases(
 		context.Background(),
 		org,
 		repoName,
-		&github.ListOptions{PerPage: 1},
+		// We can reasonably expect there to have been a 4.x release within the
+		// last 5 releases, so:
+		&github.ListOptions{PerPage: 5},
 	)
 	if err != nil {
 		glog.Errorf(
-			"couldn't fetch releases from repo %s/%s: %v",
+			"Couldn't fetch releases from repo '%s/%s': %v",
 			org, repoName, err,
 		)
 		return nil, err
 	}
 
-	releaseTitle := releases[0].Name
-	glog.Debugf("first release is: '%s'", *releaseTitle)
+	for i, release := range releases {
+		name := *release.Name
+		glog.Debugf("Release %d is: '%s'", i, name)
 
-	official, err := Parse(*releaseTitle)
-	if err != nil {
-		glog.Errorf("couldn't parse release '%s': %v", *releaseTitle, err)
-		return nil, err
+		if name[0] != '4' {
+			glog.Debugf("Release's major version isn't 4 - skipping.")
+			continue
+		}
+
+		official, err := Parse(name)
+		if err != nil {
+			glog.Errorf("Couldn't parse release '%s': %v", name, err)
+			return nil, err
+		}
+
+		glog.Infof("=> %s", official.String())
+		return official, nil
 	}
 
-	glog.Infof("=> %s", official.String())
-	return official, nil
+	return nil, fmt.Errorf("no recent 4.x releases available")
 }

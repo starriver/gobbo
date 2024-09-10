@@ -31,7 +31,9 @@ func streamString(latest bool) string {
 }
 
 func (s *Store) CachedGodotRelease(latest bool) (*godot.Official, error) {
-	path := s.Join("cache", streamString(latest))
+	ss := streamString(latest)
+	path := s.Join("cache", ss)
+	glog.Debugf("Checking for cached Godot release from '%s'", path)
 
 	st, err := os.Stat(path)
 	if err != nil {
@@ -39,7 +41,7 @@ func (s *Store) CachedGodotRelease(latest bool) (*godot.Official, error) {
 	}
 
 	if st.ModTime().AddDate(0, 0, 1).Before(time.Now()) {
-		// Cache is too old.
+		glog.Debug("Cache is more than a day old - busting")
 		return nil, nil
 	}
 
@@ -51,11 +53,12 @@ func (s *Store) CachedGodotRelease(latest bool) (*godot.Official, error) {
 
 	if len(b) < 2 {
 		// Not written yet. Single rune is newline.
+		glog.Debug("Nothing cached")
 		return nil, nil
 	}
 
 	str := string(b[:len(b)-1]) // Trim newline
-	glog.Infof("using Godot %s", str)
+	glog.Debugf("Cached %s Godot is: %s", ss, str)
 	return godot.Parse(str)
 }
 
