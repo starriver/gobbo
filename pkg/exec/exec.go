@@ -19,7 +19,7 @@ func Execv(binPath string, args []string) {
 	glog.Debugf("execv: %s", es)
 
 	env := os.Environ()
-	err := syscall.Exec(binPath, args, env)
+	err := syscall.Exec(binPath, append([]string{binPath}, args...), env)
 	if err != nil {
 		glog.Errorf("Couldn't execute %s: %v", es, err)
 		os.Exit(1)
