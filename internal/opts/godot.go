@@ -78,7 +78,10 @@ func InstallGodot(r *charli.Result, s *store.Store, g *godot.Official, mode Inst
 			break
 		}
 		if !isInstalled {
-			s.InstallGodot(g)
+			err := s.InstallGodot(g)
+			if err != nil {
+				r.Error(err)
+			}
 		}
 
 	case Always:
