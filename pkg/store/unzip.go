@@ -14,12 +14,10 @@ import (
 // Lifted from:
 // https://stackoverflow.com/a/24792688
 
-const prefix = "unzip-"
-
 func (s *Store) Unzip(src string) (string, error) {
 	hash := sha256.Sum256([]byte(src))
 	b64 := base64.URLEncoding.EncodeToString(hash[:])
-	dest := s.Join("tmp", prefix+b64)
+	dest := s.Join("tmp", "unzip-"+b64)
 
 	err := os.RemoveAll(dest)
 	if err != nil {
