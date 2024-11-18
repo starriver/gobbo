@@ -12,13 +12,16 @@ import (
 
 func New(path string) (store *Store, errs []error) {
 	errs = walk(schema, path)
-
-	if len(errs) == 0 {
-		store = &Store{
-			Root:     path,
-			Platform: platform.FromRuntime(),
-		}
+	if len(errs) != 0 {
+		return
 	}
+
+	store = &Store{
+		Root:     path,
+		Platform: platform.FromRuntime(),
+	}
+
+	store.CleanTemp()
 	return
 }
 
