@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"gitlab.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/glog"
 )
 
 // Replace the currently running process. Used to run Godot in the foreground.

@@ -5,8 +5,8 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/pkg/glog"
-	"gitlab.com/starriver/gobbo/pkg/store"
+	"github.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/store"
 )
 
 var Store = charli.Option{

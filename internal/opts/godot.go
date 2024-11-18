@@ -2,9 +2,9 @@ package opts
 
 import (
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/pkg/glog"
-	"gitlab.com/starriver/gobbo/pkg/godot"
-	"gitlab.com/starriver/gobbo/pkg/store"
+	"github.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/godot"
+	"github.com/starriver/gobbo/pkg/store"
 )
 
 var Godot = charli.Option{

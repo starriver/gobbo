@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"gitlab.com/starriver/gobbo/pkg/godot"
+	"github.com/starriver/gobbo/pkg/godot"
 )
 
 //go:embed template/*

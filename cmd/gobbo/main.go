@@ -7,9 +7,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/internal/cmds"
-	"gitlab.com/starriver/gobbo/internal/opts"
-	"gitlab.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/internal/cmds"
+	"github.com/starriver/gobbo/internal/opts"
+	"github.com/starriver/gobbo/pkg/glog"
 )
 
 var description = `

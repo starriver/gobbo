@@ -5,8 +5,8 @@ import (
 	"runtime/debug"
 
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/internal/opts"
-	"gitlab.com/starriver/gobbo/pkg/godot"
+	"github.com/starriver/gobbo/internal/opts"
+	"github.com/starriver/gobbo/pkg/godot"
 )
 
 const infoDesc = `

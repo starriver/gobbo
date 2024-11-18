@@ -2,7 +2,7 @@ package opts
 
 import (
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/glog"
 )
 
 var Log = charli.Option{

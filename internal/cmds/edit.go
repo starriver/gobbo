@@ -2,9 +2,9 @@ package cmds
 
 import (
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/internal/opts"
-	"gitlab.com/starriver/gobbo/pkg/exec"
-	"gitlab.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/internal/opts"
+	"github.com/starriver/gobbo/pkg/exec"
+	"github.com/starriver/gobbo/pkg/glog"
 )
 
 const editDesc = `

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/pelletier/go-toml/v2"
-	"gitlab.com/starriver/gobbo/pkg/godot"
+	"github.com/starriver/gobbo/pkg/godot"
 )
 
 type Project struct {

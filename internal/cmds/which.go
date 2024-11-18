@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/starriver/charli"
-	"gitlab.com/starriver/gobbo/internal/opts"
+	"github.com/starriver/gobbo/internal/opts"
 )
 
 const whichDesc = `

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-github/v63/github"
-	"gitlab.com/starriver/gobbo/pkg/glog"
-	"gitlab.com/starriver/gobbo/pkg/platform"
+	"github.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/platform"
 )
 
 type Official struct {

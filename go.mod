@@ -1,4 +1,4 @@
-module gitlab.com/starriver/gobbo
+module github.com/starriver/gobbo
 
 go 1.22
 
