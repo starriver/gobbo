@@ -3,7 +3,7 @@ package store
 import (
 	"path/filepath"
 
-	"gitlab.com/starriver/gobbo/pkg/platform"
+	"github.com/starriver/gobbo/pkg/platform"
 )
 
 type Store struct {
@@ -24,6 +24,7 @@ var schema = dir{
 	"bin": dir{
 		"official": dir{},
 	},
+	"tmp": dir{},
 }
 
 func (s *Store) Join(elem ...string) string {

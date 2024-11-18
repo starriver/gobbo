@@ -1,4 +1,4 @@
-package download
+package store
 
 import (
 	"crypto/sha256"
@@ -10,17 +10,15 @@ import (
 	"path/filepath"
 
 	"github.com/schollz/progressbar/v3"
-	"gitlab.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/glog"
 )
 
-const prefix = "gobbo-download-"
-
-func Download(url string) (string, error) {
+func (s *Store) Download(url string) (string, error) {
 	hash := sha256.Sum256([]byte(url))
 	b64 := base64.URLEncoding.EncodeToString(hash[:])
-	tmp := filepath.Join(os.TempDir(), prefix+b64)
+	tmp := filepath.Join(s.Join("tmp"), "download-"+b64)
 
-	var offset int64
+	var offset int64 = 0
 
 	if stat, err := os.Stat(tmp); !os.IsNotExist(err) {
 		if err != nil {
@@ -38,14 +36,18 @@ func Download(url string) (string, error) {
 	if offset >= 4096 {
 		offset -= 4096
 		f.Truncate(offset)
-		f.Seek(offset, io.SeekStart)
+	} else {
+		offset = 0
 	}
+	f.Seek(offset, io.SeekStart)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Offset", fmt.Sprintf("bytes=%d-", offset))
+	if offset != 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
+	}
 
 	client := &http.Client{}
 	res, err := client.Do(req)
@@ -54,8 +56,14 @@ func Download(url string) (string, error) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GET %s: %s", url, res.Status)
+	if offset == 0 {
+		if res.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("GET %s: %s", url, res.Status)
+		}
+	} else {
+		if res.StatusCode != http.StatusPartialContent {
+			return "", fmt.Errorf("GET %s: %s", url, res.Status)
+		}
 	}
 
 	bar := progressbar.DefaultBytes(offset + res.ContentLength)

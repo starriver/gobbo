@@ -7,10 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/starriver/gobbo/pkg/download"
-	"gitlab.com/starriver/gobbo/pkg/glog"
-	"gitlab.com/starriver/gobbo/pkg/godot"
-	"gitlab.com/starriver/gobbo/pkg/platform"
+	"github.com/starriver/gobbo/pkg/glog"
+	"github.com/starriver/gobbo/pkg/godot"
+	"github.com/starriver/gobbo/pkg/platform"
 )
 
 func (s *Store) IsGodotInstalled(g *godot.Official) (bool, error) {
@@ -79,18 +78,13 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 	glog.Infof("downloading Godot %s...", g.String())
 	url := g.DownloadURL(&s.Platform)
 
-	zip, err := download.Download(url)
-	if err != nil {
-		return err
-	}
-
-	tmp, err := os.MkdirTemp("", "gobbo-extract-*")
+	zip, err := s.Download(url)
 	if err != nil {
 		return err
 	}
 
 	glog.Info("extracting...")
-	err = download.Unzip(zip, tmp)
+	extracted, err := s.Unzip(zip)
 	if err != nil {
 		return err
 	}
@@ -100,7 +94,7 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 		glog.Warnf("couldn't remove '%s': %v", zip, err)
 	}
 
-	err = normalize(s, g, tmp)
+	err = normalize(s, g, extracted)
 	if err != nil {
 		return err
 	}
@@ -116,7 +110,7 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 		return err
 	}
 
-	err = os.Rename(tmp, dest)
+	err = os.Rename(extracted, dest)
 	if err != nil {
 		return err
 	}

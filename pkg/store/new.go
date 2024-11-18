@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.com/starriver/gobbo/pkg/platform"
+	"github.com/starriver/gobbo/pkg/platform"
 )
 
 func New(path string) (store *Store, errs []error) {

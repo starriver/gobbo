@@ -1,7 +1,9 @@
-package download
+package store
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -12,10 +14,25 @@ import (
 // Lifted from:
 // https://stackoverflow.com/a/24792688
 
-func Unzip(src, dest string) error {
+const prefix = "unzip-"
+
+func (s *Store) Unzip(src string) (string, error) {
+	hash := sha256.Sum256([]byte(src))
+	b64 := base64.URLEncoding.EncodeToString(hash[:])
+	dest := s.Join("tmp", prefix+b64)
+
+	err := os.RemoveAll(dest)
+	if err != nil {
+		return "", err
+	}
+	err = os.Mkdir(dest, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
 	r, err := zip.OpenReader(src)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() {
 		if err := r.Close(); err != nil {
@@ -67,9 +84,9 @@ func Unzip(src, dest string) error {
 	for _, f := range r.File {
 		err := extractAndWriteFile(f)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	return dest, nil
 }
