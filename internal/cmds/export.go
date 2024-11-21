@@ -45,6 +45,27 @@ var Export = charli.Command{
 	},
 
 	Run: func(r *charli.Result) {
+		// opts.LogSetup(r)
+
+		// store := opts.StoreSetup(r)
+
+		// installMode := opts.IfAbsent
+		// if r.Options["n"].IsSet {
+		// 	installMode = opts.Never
+		// }
+
+		// project, godot := opts.ProjectGodotSetup(r, store, installMode, true)
+
+		// installed, err := store.IsGodotInstalled(godot)
+		// if err != nil {
+		// 	r.Error(err)
+		// } else if !installed {
+		// 	r.Errorf("Godot %s not installed", godot.String())
+		// }
+
+		// if r.Fail {
+		// 	return
+		// }
 
 	},
 }
