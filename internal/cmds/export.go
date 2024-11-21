@@ -1,8 +1,50 @@
 package cmds
 
-import "github.com/starriver/charli"
+import (
+	"github.com/starriver/charli"
+	"github.com/starriver/gobbo/internal/opts"
+)
+
+const exportDesc = `
+Builds project exports in parallel using Docker containers. All exports are
+built unless {EXPORT}s are specified.
+
+Gobbo builds its own Docker image for the containers, tagged {_gobbo:base}. You
+can provide your own by creating a Dockerfile in your project's root directory,
+which will tag the image {_gobbo:HASH}, where {HASH} is a hash of your project
+path.
+
+Use '{FROM _gobbo:base}' in your Dockerfile to ensure you have all of the
+prerequisite dependencies available (unless you know what you're doing!). Note
+that Godot will be bind-mounted into the build containers, so there's no need
+to install it in your Dockerfile.
+
+Currently, Docker is the only supported container runtime. {DOCKER_HOST} must be
+set, or the command will fail.
+`
 
 var Export = charli.Command{
-	Name:     "export",
-	Headline: "Build project exports",
+	Name:        "export",
+	Headline:    "Build project exports",
+	Description: exportDesc,
+	Options: []charli.Option{
+		opts.Project,
+
+		// TODO: -j/--jobs
+
+		{
+			Short:    'n',
+			Long:     "no-install",
+			Flag:     true,
+			Headline: "Skip dependency check and installation",
+		},
+	},
+	Args: charli.Args{
+		Varadic:  true,
+		Metavars: []string{"EXPORT"},
+	},
+
+	Run: func(r *charli.Result) {
+
+	},
 }

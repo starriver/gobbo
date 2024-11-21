@@ -23,7 +23,7 @@ var app = charli.App{
 		cmds.Install,
 		cmds.Edit,
 		cmds.Run,
-		// cmds.Export,
+		cmds.Export,
 		cmds.Clean,
 		// cmds.Add,
 		// cmds.Remove,
