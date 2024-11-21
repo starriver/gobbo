@@ -1,9 +1,11 @@
 package project
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/starriver/gobbo/pkg/godot"
@@ -99,4 +101,44 @@ func (p *Project) GodotConfigPath() string {
 
 func (p *Project) GodotCachePath() string {
 	return filepath.Join(p.Src, ".godot")
+}
+
+// Reads the project version from 'config/version' in project.godot.
+func (p *Project) Version() (string, error) {
+	path := p.GodotConfigPath()
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+	appSection := false
+	for s.Scan() {
+		t := s.Text()
+		if (len(t) == 0) || (t[0] == ';') {
+			continue
+		}
+
+		if appSection {
+			if t[0] == '[' {
+				// Starting another section - don't bother scanning further.
+				break
+			}
+
+			if strings.HasPrefix(t, "config/version=\"") {
+				from := strings.Index(t, "\"") + 1
+				to := strings.LastIndex(t, "\"")
+				version := t[from:to]
+				if version == "" {
+					version = "unspecified"
+				}
+				return version, nil
+			}
+		} else if t == "[application]" {
+			appSection = true
+		}
+	}
+
+	return "unspecified", nil
 }

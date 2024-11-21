@@ -26,6 +26,14 @@ var Info = charli.Command{
 		store := opts.StoreSetup(r)
 
 		project := opts.ProjectSetup(r, false)
+		projectVersion := "n/a"
+		if project != nil {
+			var err error
+			projectVersion, err = project.Version()
+			if err != nil {
+				r.Error(err)
+			}
+		}
 
 		var godot *godot.Official
 		if project != nil {
@@ -42,14 +50,16 @@ var Info = charli.Command{
 		if !ok {
 			panic("Failed to read build info")
 		}
-		fmt.Printf("Gobbo version:  %s\n", bi.Main.Version)
+		fmt.Printf("Gobbo version:   %s\n", bi.Main.Version)
 
 		gv := "n/a"
 		if godot != nil {
 			gv = godot.String()
 		}
-		fmt.Printf("Godot version:  %s\n", gv)
+		fmt.Printf("Godot version:   %s\n", gv)
 
-		fmt.Printf("Store path:     %s\n", store.Root)
+		fmt.Printf("Project version: %s\n", projectVersion)
+
+		fmt.Printf("Store path:      %s\n", store.Root)
 	},
 }
