@@ -75,7 +75,7 @@ func (s *Store) SetCachedGodotRelease(latest bool, g *godot.Official) error {
 }
 
 func (s *Store) InstallGodot(g *godot.Official) error {
-	glog.Infof("downloading Godot %s...", g.String())
+	glog.Infof("Downloading Godot %s...", g.String())
 	url := g.DownloadURL(&s.Platform)
 
 	zip, err := s.Download(url)
@@ -83,7 +83,7 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 		return err
 	}
 
-	glog.Info("extracting...")
+	glog.Info("Extracting...")
 	extracted, err := s.Unzip(zip)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (s *Store) InstallGodot(g *godot.Official) error {
 
 	err = os.Remove(zip)
 	if err != nil {
-		glog.Warnf("couldn't remove '%s': %v", zip, err)
+		glog.Warnf("Couldn't remove '%s': %v", zip, err)
 	}
 
 	err = normalize(s, g, extracted)

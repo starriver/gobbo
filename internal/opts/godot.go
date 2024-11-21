@@ -32,7 +32,7 @@ func GodotSetup(r *charli.Result, s *store.Store, mode InstallMode, defaultStabl
 	if isStream {
 		g, err = s.CachedGodotRelease(isLatest)
 		if err != nil {
-			glog.Warnf("couldn't check for cached release: %v", err)
+			glog.Warnf("Couldn't check for cached release: %v", err)
 		}
 	}
 

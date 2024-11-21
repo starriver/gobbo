@@ -71,6 +71,6 @@ var New = charli.Command{
 
 		project.Generate("", path, godot, bare)
 
-		glog.Infof("created '%s'", path)
+		glog.Infof("Created '%s'", path)
 	},
 }

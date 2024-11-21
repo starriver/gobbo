@@ -30,7 +30,7 @@ func StoreSetup(r *charli.Result) *store.Store {
 
 	s, errs := store.New(path)
 	if s == nil {
-		glog.Error("invalid store:")
+		glog.Error("Invalid store:")
 		for _, err := range errs {
 			glog.Error(err)
 		}

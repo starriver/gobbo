@@ -99,9 +99,9 @@ func ProjectGodotSetup(
 		g = p.Godot
 		InstallGodot(r, s, g, mode)
 	} else {
-		glog.Error("no project or Godot version supplied.")
+		glog.Error("No project or Godot version supplied.")
 		glog.Error(
-			"change to a project directory, or use -p/--project or -g/--godot.",
+			"Change to a project directory, or use -p/--project or -g/--godot.",
 		)
 		r.Fail = true
 	}

@@ -69,7 +69,7 @@ func (s *Store) Download(url string) (string, error) {
 	bar := progressbar.DefaultBytes(offset + res.ContentLength)
 	err = bar.Set64(offset)
 	if err != nil {
-		glog.Warnf("couldn't set progress bar position: %v", err)
+		glog.Warnf("Couldn't set progress bar position: %v", err)
 	}
 
 	_, err = io.Copy(io.MultiWriter(f, bar), res.Body)
