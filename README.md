@@ -37,8 +37,8 @@ Subtables will be used to create a matrix. For example, to produce a matrix of b
 
 [export.steam]
 only = ["windows", "macos", "linux"]
-mount = { steam = "/opt/steam" } # Mount files into the container
-script = { # Run scripts before/after the Godot export.
+volumes = { "./steam" = "/opt/steam" } # Mount files into the container
+scripts = { # Run scripts before/after the Godot export.
 	pre = "/opt/steam/prepare.sh"
 	post = "/opt/steam/finalise.sh"
 }

@@ -12,8 +12,26 @@ import (
 )
 
 type Project struct {
-	Godot *godot.Official
-	Src   string
+	Godot   *godot.Official
+	Src     string
+	Version string
+
+	Export struct {
+		Presets  []string
+		Only     []string
+		Dist     string
+		Variants map[string]Variant
+	}
+}
+
+type Variant struct {
+	Only    []string
+	Volumes map[string]string
+	Scripts struct {
+		Pre  string
+		Post string
+	}
+	Elective bool
 }
 
 func Load(path string, ignoreStream bool) (p *Project, errs []error) {
@@ -92,6 +110,53 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		pushErrorf("'%s': unknown key", k)
 	}
 
+	// TODO: read export config.
+
+	// ---
+	// Now we start reading Godot config from src.
+
+	// Get project version from project.godot
+	configPath := p.GodotConfigPath()
+	f, err = os.Open(configPath)
+	if err != nil {
+		pushErrorf("Couldn't open '%s': %v", configPath, err)
+	} else {
+		defer f.Close()
+
+		s := bufio.NewScanner(f)
+		appSection := false
+		p.Version = "unspecified"
+
+		for s.Scan() {
+			t := s.Text()
+			if (len(t) == 0) || (t[0] == ';') {
+				continue
+			}
+
+			if appSection {
+				if t[0] == '[' {
+					// Starting another section - don't bother scanning further.
+					break
+				}
+
+				if strings.HasPrefix(t, "config/version=\"") {
+					from := strings.Index(t, "\"") + 1
+					to := strings.LastIndex(t, "\"")
+					v := t[from:to]
+					if v != "" {
+						p.Version = v
+					}
+					break
+				}
+			} else if t == "[application]" {
+				appSection = true
+			}
+		}
+	}
+
+	// TODO: Get export presets.
+	// TODO: Check preset names match those in Gobbo config, WARN otherwise
+
 	return
 }
 
@@ -101,44 +166,4 @@ func (p *Project) GodotConfigPath() string {
 
 func (p *Project) GodotCachePath() string {
 	return filepath.Join(p.Src, ".godot")
-}
-
-// Reads the project version from 'config/version' in project.godot.
-func (p *Project) Version() (string, error) {
-	path := p.GodotConfigPath()
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	s := bufio.NewScanner(f)
-	appSection := false
-	for s.Scan() {
-		t := s.Text()
-		if (len(t) == 0) || (t[0] == ';') {
-			continue
-		}
-
-		if appSection {
-			if t[0] == '[' {
-				// Starting another section - don't bother scanning further.
-				break
-			}
-
-			if strings.HasPrefix(t, "config/version=\"") {
-				from := strings.Index(t, "\"") + 1
-				to := strings.LastIndex(t, "\"")
-				version := t[from:to]
-				if version == "" {
-					version = "unspecified"
-				}
-				return version, nil
-			}
-		} else if t == "[application]" {
-			appSection = true
-		}
-	}
-
-	return "unspecified", nil
 }

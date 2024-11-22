@@ -26,14 +26,6 @@ var Info = charli.Command{
 		store := opts.StoreSetup(r)
 
 		project := opts.ProjectSetup(r, false)
-		projectVersion := "n/a"
-		if project != nil {
-			var err error
-			projectVersion, err = project.Version()
-			if err != nil {
-				r.Error(err)
-			}
-		}
 
 		var godot *godot.Official
 		if project != nil {
@@ -58,7 +50,7 @@ var Info = charli.Command{
 		}
 		fmt.Printf("Godot version:   %s\n", gv)
 
-		fmt.Printf("Project version: %s\n", projectVersion)
+		fmt.Printf("Project version: %s\n", project.Version)
 
 		fmt.Printf("Store path:      %s\n", store.Root)
 	},
