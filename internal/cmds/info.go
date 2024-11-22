@@ -42,16 +42,15 @@ var Info = charli.Command{
 		if !ok {
 			panic("Failed to read build info")
 		}
-		fmt.Printf("Gobbo version:   %s\n", bi.Main.Version)
 
 		gv := "n/a"
 		if godot != nil {
 			gv = godot.String()
 		}
+
+		fmt.Printf("Gobbo version:   %s\n", bi.Main.Version)
 		fmt.Printf("Godot version:   %s\n", gv)
-
 		fmt.Printf("Project version: %s\n", project.Version)
-
 		fmt.Printf("Store path:      %s\n", store.Root)
 	},
 }
