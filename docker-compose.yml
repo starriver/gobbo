@@ -1,0 +1,11 @@
+# Drafting an example output from the export.
+
+services:
+  linux_0:
+    image: _gobbo:latest
+    volumes:
+      - ./src:/srv/src:z,ro
+      - ./dist:/srv/dist:z
+    environment:
+      SCRIPT_PRE: "echo pre"
+      SCRIPT_POST: "echo post"

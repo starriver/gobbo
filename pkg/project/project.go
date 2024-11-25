@@ -17,9 +17,10 @@ type Project struct {
 	Version string
 
 	Export struct {
-		Presets  []string
-		Only     []string
-		Dist     string
+		Presets []string
+		Only    []string
+		Dist    string
+		// add Volumes, Scripts?
 		Variants map[string]Variant
 	}
 }
