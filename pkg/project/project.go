@@ -35,6 +35,45 @@ type Variant struct {
 	Elective bool
 }
 
+func popFunc[T any](m map[string]any, pushErrorf func(string, ...any)) func(string, bool) (T, bool) {
+	return func(path string, require bool) (T, bool) {
+		var t T
+		mm := m
+		segs := strings.Split(path, ".") // heh
+
+		for i, seg := range segs {
+			location := strings.Join(segs[0:i], ".")
+			v, ok := mm[seg]
+			if !ok {
+				if require {
+					pushErrorf("required '%s' isn't set", location)
+				}
+				return t, false
+			}
+
+			// Traverse deeper?
+			if i != len(segs)-1 {
+				// Expect a table.
+				table, ok := v.(map[string]any)
+				if !ok {
+					pushErrorf("'%s': expected %T, got %T", location, table, v)
+					return t, false
+				}
+				mm = table
+				continue
+			}
+
+			t, ok = v.(T)
+			if !ok {
+				pushErrorf("'%s': expected %T, got %T", t, v)
+			}
+			delete(mm, seg)
+		}
+
+		return t, true
+	}
+}
+
 func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	var err error
 	f, err := os.Open(path)
@@ -45,61 +84,38 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 
 	var t map[string]any
 
-	pushError := func(err error) {
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
 	pushErrorf := func(format string, a ...any) {
 		errs = append(errs, fmt.Errorf(format, a...))
 	}
 
-	pop := func(key string) (v any, ok bool) {
-		v, ok = t[key]
-		delete(t, key)
-		return
-	}
-
-	checkString := func(key string, v any) (s string, ok bool) {
-		s, ok = v.(string)
-		if !ok {
-			pushErrorf("'%s': expected string, got %T", key, v)
-		}
-		return
-	}
-
 	err = toml.NewDecoder(f).Decode(&t)
-	pushError(err)
+	if err != nil {
+		errs = append(errs, err)
+		return
+	}
+
+	popString := popFunc[string](t, pushErrorf)
+	popBool := popFunc[bool](t, pushErrorf)
+	popStringArray := popFunc[[]string](t, pushErrorf)
 
 	p = &Project{}
 
-	var str string
-	v, ok := pop("godot")
+	s, ok := popString("godot", true)
 	if ok {
-		str, ok = checkString("godot", v)
-		if ok {
-			p.Godot, err = godot.ParseWithStream(str, ignoreStream)
-			pushError(err)
+		p.Godot, err = godot.ParseWithStream(s, ignoreStream)
+		if err != nil {
+			errs = append(errs, err)
 		}
-	} else {
-		pushErrorf("'godot' isn't set")
 	}
 
-	str = ""
-	v, ok = pop("src")
+	p.Src = "src"
+	s, ok = popString("src", false)
 	if ok {
-		str, ok = checkString("src", v)
-	} else {
-		str = "src"
-		ok = true
-	}
-
-	if ok {
-		p.Src = filepath.Join(filepath.Dir(path), str)
+		p.Src = filepath.Join(filepath.Dir(path), s)
 		_, err := os.Stat(p.GodotConfigPath())
 		if err != nil {
 			if os.IsNotExist(err) {
-				pushErrorf("src '%s' doesn't exist", str)
+				pushErrorf("src '%s' doesn't exist", s)
 			} else {
 				errs = append(errs, err)
 			}
