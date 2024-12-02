@@ -6,6 +6,7 @@ import (
 
 	"github.com/starriver/charli"
 	"github.com/starriver/gobbo/internal/opts"
+	"github.com/starriver/gobbo/pkg/glog"
 	"github.com/starriver/gobbo/pkg/godot"
 )
 
@@ -23,6 +24,7 @@ var Info = charli.Command{
 	},
 
 	Run: func(r *charli.Result) {
+		opts.LogSetup(r)
 		store := opts.StoreSetup(r)
 
 		project := opts.ProjectSetup(r, false)
@@ -52,5 +54,7 @@ var Info = charli.Command{
 		fmt.Printf("Godot version:   %s\n", gv)
 		fmt.Printf("Project version: %s\n", project.Version)
 		fmt.Printf("Store path:      %s\n", store.Root)
+
+		glog.Debugf("Project struct: %+v", project)
 	},
 }

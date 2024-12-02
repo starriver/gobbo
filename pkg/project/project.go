@@ -128,13 +128,15 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		}
 	}
 
-	p.Src = "src"
 	s, ok = popString("src", false)
+	if !ok {
+		s = "src"
+	}
 	p.Src = filepath.Join(filepath.Dir(path), s)
 	_, err = os.Stat(p.GodotConfigPath())
 	if err != nil {
 		if os.IsNotExist(err) {
-			pushErrorf("source directory doesn't exist: '%s'", s)
+			pushErrorf("source directory doesn't exist: '%s'", p.Src)
 		} else {
 			errs = append(errs, err)
 		}
