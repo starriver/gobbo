@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/starriver/gobbo/pkg/glog"
 	"github.com/starriver/gobbo/pkg/godot"
 )
 
@@ -22,7 +24,7 @@ type Project struct {
 		Dist     string
 		Volumes  map[string]string
 		Scripts  Scripts
-		Variants map[string]Variant
+		Variants map[string]*Variant
 	}
 }
 
@@ -165,7 +167,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 			continue
 		}
 
-		v := Variant{}
+		v := &Variant{}
 		prefix := fmt.Sprintf("export.%s.", k)
 
 		v.Only, _ = popStringArray(prefix+"only", false)
@@ -191,7 +193,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	configPath := p.GodotConfigPath()
 	f, err = os.Open(configPath)
 	if err != nil {
-		pushErrorf("Couldn't open '%s': %v", configPath, err)
+		pushErrorf("couldn't open '%s': %v", configPath, err)
 	} else {
 		defer f.Close()
 
@@ -226,14 +228,88 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		}
 	}
 
-	// TODO: Get export presets.
-	// TODO: Check preset names match those in Gobbo config, WARN otherwise
+	// Get export presets
+	epPath := p.ExportPresetsPath()
+	presetMap := map[string]bool{}
+
+	_, err = os.Stat(epPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			pushErrorf("couldn't stat '%s': %v", epPath, err)
+		}
+		// Else, export_presets.cfg doesn't exist, so no presets are defined.
+	} else {
+		f, err := os.Open(epPath)
+		if err != nil {
+			pushErrorf("couldn't open '%s': %v", configPath, err)
+		} else {
+			defer f.Close()
+
+			sectionRe := regexp.MustCompile("^\\[preset\\.[0-9]+\\]$")
+
+			s := bufio.NewScanner(f)
+			scanSection := false
+
+			for s.Scan() {
+				t := s.Text()
+				if (len(t) == 0) || (t[0] == ';') {
+					continue
+				}
+
+				if scanSection {
+					if strings.HasPrefix(t, "name=\"") {
+						from := strings.Index(t, "\"") + 1
+						to := strings.LastIndex(t, "\"")
+						v := t[from:to]
+						if v != "" {
+							p.Export.Presets = append(p.Export.Presets, v)
+							presetMap[v] = true
+						}
+						scanSection = false
+					}
+					continue
+				}
+
+				// Are we starting a [preset.*] section?
+				if sectionRe.MatchString(t) {
+					scanSection = true
+				}
+			}
+		}
+	}
+
+	// If referenced presets don't exist, warn, and remove from in-memory config
+	only := make([]string, len(p.Export.Only))
+	for _, preset := range p.Export.Only {
+		if _, ok := presetMap[preset]; !ok {
+			glog.Warnf("export.only: missing preset '%s'", preset)
+		} else {
+			only = append(only, preset)
+		}
+	}
+	p.Export.Only = only
+
+	for k, variant := range p.Export.Variants {
+		only := make([]string, len(variant.Only))
+		for _, preset := range variant.Only {
+			if _, ok := presetMap[preset]; !ok {
+				glog.Warnf("export.%s.only: missing preset '%s'", k, preset)
+			} else {
+				only = append(only, preset)
+			}
+		}
+		variant.Only = only
+	}
 
 	return
 }
 
 func (p *Project) GodotConfigPath() string {
 	return filepath.Join(p.Src, "project.godot")
+}
+
+func (p *Project) ExportPresetsPath() string {
+	return filepath.Join(p.Src, "export_presets.cfg")
 }
 
 func (p *Project) GodotCachePath() string {
