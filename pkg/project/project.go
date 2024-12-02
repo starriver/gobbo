@@ -17,22 +17,25 @@ type Project struct {
 	Version string
 
 	Export struct {
-		Presets []string
-		Only    []string
-		Dist    string
-		// add Volumes, Scripts?
+		Presets  []string
+		Only     []string
+		Dist     string
+		Volumes  map[string]string
+		Scripts  Scripts
 		Variants map[string]Variant
 	}
 }
 
 type Variant struct {
-	Only    []string
-	Volumes map[string]string
-	Scripts struct {
-		Pre  string
-		Post string
-	}
+	Only     []string
+	Volumes  map[string]string
+	Scripts  Scripts
 	Elective bool
+}
+
+type Scripts struct {
+	Pre  string
+	Post string
 }
 
 func popFunc[T any](m map[string]any, pushErrorf func(string, ...any)) func(string, bool) (T, bool) {
@@ -82,21 +85,22 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		return
 	}
 
-	var t map[string]any
+	var root map[string]any
 
 	pushErrorf := func(format string, a ...any) {
 		errs = append(errs, fmt.Errorf(format, a...))
 	}
 
-	err = toml.NewDecoder(f).Decode(&t)
+	err = toml.NewDecoder(f).Decode(&root)
 	if err != nil {
 		errs = append(errs, err)
 		return
 	}
 
-	popString := popFunc[string](t, pushErrorf)
-	popBool := popFunc[bool](t, pushErrorf)
-	popStringArray := popFunc[[]string](t, pushErrorf)
+	popString := popFunc[string](root, pushErrorf)
+	popBool := popFunc[bool](root, pushErrorf)
+	popStringArray := popFunc[[]string](root, pushErrorf)
+	popStringMap := popFunc[map[string]string](root, pushErrorf)
 
 	p = &Project{}
 
@@ -110,158 +114,57 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 
 	p.Src = "src"
 	s, ok = popString("src", false)
-	if ok {
-		p.Src = filepath.Join(filepath.Dir(path), s)
-		_, err := os.Stat(p.GodotConfigPath())
-		if err != nil {
-			if os.IsNotExist(err) {
-				pushErrorf("src '%s' doesn't exist", s)
-			} else {
-				errs = append(errs, err)
-			}
+	p.Src = filepath.Join(filepath.Dir(path), s)
+	_, err = os.Stat(p.GodotConfigPath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			pushErrorf("source directory doesn't exist: '%s'", s)
+		} else {
+			errs = append(errs, err)
 		}
 	}
 
-	// Load export config (note we load Godot's export presets later).
-	// Using a closure here so we can easily short-circuit.
-	(func() {
-		v, ok := pop("export")
+	p.Export.Only, _ = popStringArray("export.only", false)
+
+	p.Export.Dist = "dist"
+	s, ok = popString("export.dist", false)
+	if ok {
+		p.Export.Dist = s
+		// Directory doesn't need to exist before export.
+	}
+
+	p.Export.Volumes, _ = popStringMap("export.volumes", false)
+
+	p.Export.Scripts.Pre, _ = popString("export.scripts.pre", false)
+	p.Export.Scripts.Post, _ = popString("export.scripts.post", false)
+
+	// The remaining export.* keys will be read as variants.
+	popVariants := popFunc[map[string]any](t, pushErrorf)
+	variants, _ := popVariants("export", false)
+
+	for k, table := range variants {
+		// Check this is actually a table first.
+		// This prevent error spam from the below pop calls.
+		_, ok := table.(map[string]any)
 		if !ok {
-			// Nothing to do.
-			return
+			pushErrorf("'export.%s': expected variant config, got %T", k, table)
+			continue
 		}
 
-		ex, ok := v.(map[string]any)
-		if !ok {
-			pushErrorf("'export': expected table, got %T", v)
-			return
-		}
+		v := Variant{}
+		prefix := fmt.Sprintf("export.%s.", k)
 
-		for k, v := range ex {
-			// If this is a table, it's an export variant.
-			vt, ok := v.(map[string]any)
-			if ok {
-				variant := Variant{}
+		v.Only, _ = popStringArray(prefix+"only", false)
+		v.Volumes, _ = popStringMap(prefix+"volumes", false)
+		v.Scripts.Pre, _ = popString(prefix+"scripts.pre", false)
+		v.Scripts.Post, _ = popString(prefix+"scripts.post", false)
+		v.Elective, _ = popBool(prefix+"elective", false)
 
-				pop := func(key string) (v any, ok bool) {
-					v, ok = vt[key]
-					delete(t, key)
-					return
-				}
-
-				vv, ok := pop("only")
-				if ok {
-					only, ok := vv.([]string)
-					if !ok {
-						pushErrorf(
-							"'export.%s.only': expected string array, got %T",
-							k, vv,
-						)
-					} else {
-						variant.Only = only
-					}
-				}
-
-				vv, ok = pop("volumes")
-				if ok {
-					volumes, ok := vv.(map[string]string)
-					if !ok {
-						pushErrorf(
-							"'export.%s.volumes': expected string-string table, got %T",
-							k, vv,
-						)
-					} else {
-						variant.Volumes = volumes
-					}
-				}
-
-				vv, ok = pop("scripts")
-				if ok {
-					scripts, ok := vv.(map[string]any)
-					if !ok {
-						pushErrorf(
-							"'export.%s.scripts': expected table, got %T",
-							k, vv,
-						)
-					} else {
-						vvv, ok := scripts["pre"]
-						if ok {
-							pre, ok := vvv.(string)
-							if !ok {
-								pushErrorf(
-									"'export.%s.scripts.pre': expected string, got %T",
-									k, vvv,
-								)
-							} else {
-								variant.Scripts.Pre = pre
-							}
-						}
-
-						vvv, ok = scripts["post"]
-						if ok {
-							post, ok := vvv.(string)
-							if !ok {
-								pushErrorf(
-									"'export.%s.scripts.post': expected string, got %T",
-									k, vvv,
-								)
-							} else {
-								variant.Scripts.Post = post
-							}
-						}
-
-						delete(scripts, "pre")
-						delete(scripts, "post")
-						if len(scripts) != 0 {
-							pushErrorf("'export.%s.scripts: unknown keys", k)
-						}
-					}
-				}
-
-				vv, ok = pop("elective")
-				if ok {
-					elective, ok := vv.(bool)
-					if !ok {
-						pushErrorf(
-							"'export.%s.elective': expected bool, got %T",
-							k, vv,
-						)
-					} else {
-						variant.Elective = elective
-					}
-				}
-
-				p.Export.Variants[k] = variant
-				continue
-			}
-
-			switch k {
-			case "only":
-				only, ok := v.([]string)
-				if !ok {
-					pushErrorf(
-						"'export.only': expected string array, got %T",
-						v,
-					)
-				} else {
-					p.Export.Only = only
-				}
-
-			case "dist":
-				dist, ok := v.(string)
-				if !ok {
-					pushErrorf("'export.dist': expected string, got %T", v)
-				} else {
-					p.Export.Dist = dist
-				}
-
-			default:
-				pushErrorf("'export.%s': expected table, got %T", v)
-			}
-		}
-	})()
+		p.Export.Variants[k] = v
+	}
 
 	// Error on remaining keys.
+	// TODO: recurse on root. If a key exists and it's not a table, error. If it's a table, recurse deeper.
 	for k := range t {
 		pushErrorf("'%s': unknown key", k)
 	}
