@@ -77,6 +77,20 @@ func popFunc[T any](m map[string]any, pushErrorf func(string, ...any)) func(stri
 	}
 }
 
+func scanKeys(m map[string]any, path string) []string {
+	unknown := []string{}
+	for k, v := range m {
+		p := path + k
+		mm, ok := v.(map[string]any)
+		if !ok {
+			unknown = append(unknown, p)
+		} else {
+			unknown = append(unknown, scanKeys(mm, p+".")...)
+		}
+	}
+	return unknown
+}
+
 func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	var err error
 	f, err := os.Open(path)
@@ -139,7 +153,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	p.Export.Scripts.Post, _ = popString("export.scripts.post", false)
 
 	// The remaining export.* keys will be read as variants.
-	popVariants := popFunc[map[string]any](t, pushErrorf)
+	popVariants := popFunc[map[string]any](root, pushErrorf)
 	variants, _ := popVariants("export", false)
 
 	for k, table := range variants {
@@ -163,10 +177,11 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		p.Export.Variants[k] = v
 	}
 
-	// Error on remaining keys.
-	// TODO: recurse on root. If a key exists and it's not a table, error. If it's a table, recurse deeper.
-	for k := range t {
-		pushErrorf("'%s': unknown key", k)
+	// Error on remaining keys, if anything still exists that isn't an empty
+	// table (recursively).
+	unknown := scanKeys(root, "")
+	for u := range unknown {
+		pushErrorf("'%s': unknown key", u)
 	}
 
 	// ---
