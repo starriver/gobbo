@@ -19,8 +19,8 @@ prerequisite dependencies available (unless you know what you're doing!). Note
 that Godot will be bind-mounted into the build containers, so there's no need
 to install it in your Dockerfile.
 
-Currently, Docker is the only supported container runtime, and Compose must be
-installed. If not, the command will fail.
+Docker Compose is required, and the Docker CLI must be in your {PATH}. If not,
+the command will fail.
 `
 
 var Export = charli.Command{
