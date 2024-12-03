@@ -1,7 +1,5 @@
 # Drafting an example output from the export.
 
-name: gobbo-$PROJECT
-
 services:
   itch_linux:
     image: starriver.run/gobbo
