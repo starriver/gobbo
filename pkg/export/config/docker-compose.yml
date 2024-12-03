@@ -4,7 +4,7 @@ name: gobbo-$PROJECT
 
 services:
   itch_linux:
-    image: starriver.run/gobbo:latest
+    image: starriver.run/gobbo
     volumes:
       - $GODOT:/opt/godot-$GODOT_VERSION:ro
       - $EXPORT_TEMPLATES:/root/.local/share/godot/export_templates:ro
