@@ -1,11 +1,15 @@
 # Drafting an example output from the export.
 
+name: gobbo-$PROJECT
+
 services:
   itch_linux:
-    image: _gobbo:latest
+    image: starriver.run/gobbo:latest
     volumes:
-      - ./src:/srv/src:z,ro
-      - ./dist:/srv/dist:z
+      - $GODOT:/opt/godot-$GODOT_VERSION:ro
+      - $EXPORT_TEMPLATES:/root/.local/share/godot/export_templates:ro
+      - $SRC:/srv/src:ro
+      - $DIST:/srv/dist:z
     environment:
       SCRIPT_PRE: "echo pre"
       SCRIPT_POST: "echo post"
