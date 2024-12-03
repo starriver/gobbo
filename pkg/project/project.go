@@ -73,6 +73,8 @@ func popFunc[T any](m map[string]any, pushErrorf func(string, ...any)) func(stri
 				pushErrorf("'%s': expected %T, got %T", t, v)
 			}
 			// Delete this element from its parent if it isn't a table.
+			// map[any]any is (possibly) a quicker coersive check than
+			// map[string]any?
 			if _, isTable := v.(map[any]any); !isTable {
 				delete(mm, seg)
 			}
