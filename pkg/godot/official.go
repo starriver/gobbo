@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/adrg/xdg"
 	"github.com/google/go-github/v63/github"
 	"github.com/starriver/gobbo/pkg/glog"
 	"github.com/starriver/gobbo/pkg/platform"
@@ -142,6 +143,15 @@ func (g *Official) DownloadURL(p *platform.Platform) (url string) {
 
 func (g *Official) ExportTemplatesURL() string {
 	return g.DownloadURL(nil) + "export_templates.tpz"
+}
+
+func (g *Official) ExportTemplatesPath() string {
+	return filepath.Join(
+		xdg.DataHome,
+		"godot",
+		"export_templates",
+		g.StringEx(true, true, true),
+	)
 }
 
 func CurrentRelease(latest bool) (*Official, error) {
