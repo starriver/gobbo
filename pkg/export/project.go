@@ -1,6 +1,7 @@
 package export
 
 import (
+	"fmt"
 	"slices"
 	"sort"
 	"strings"
@@ -15,7 +16,7 @@ type Filter [][2]string
 
 type ComposeConfig struct {
 	Services map[string]Service
-	Volumes  map[string]map[string]any
+	// Volumes  map[string]map[string]any // unused for now
 }
 
 type Service struct {
@@ -60,7 +61,56 @@ func intersect(a []string, b []string) []string {
 	return set
 }
 
-func Configure(store *store.Store, p *project.Project, filter Filter) (c ComposeConfig) {
+// TODO proper config here - atm we can only append short-format
+// bind-mount volumes. In order to do this, we'll need to implement
+// array handling in the project TOML loader and move the Volume and
+// Bind structs there.
+func parseVolume(s string) Volume {
+	v := Volume{
+		Type: "bind",
+		Bind: Bind{
+			CreateHostPath: true,
+		},
+	}
+
+	split := strings.Split(s, ":")
+
+	switch len(split) {
+	case 2, 3: // OK
+	default:
+		panic([]any{"Unknown volume format", s})
+	}
+
+	if len(split) == 3 {
+		flags := strings.Split(split[2], ",")
+		for _, flag := range flags {
+			switch flag {
+			case "z", "Z":
+				v.Bind.SELinux = flag
+			case "ro":
+				v.ReadOnly = true
+			default:
+				panic([]any{"Unimplemented volume flag", flag})
+			}
+		}
+	}
+
+	v.Source = split[0]
+	switch v.Source {
+	case ".", "/": // OK
+	default:
+		panic([]any{"Non bind mount volumes not yet implemented"})
+	}
+
+	v.Target = split[1]
+	if v.Target[0] != '/' {
+		panic([]any{"Bind mount target must be an absolute path", v.Target})
+	}
+
+	return v
+}
+
+func Configure(store *store.Store, p *project.Project, filter []string) (c ComposeConfig) {
 	presets := make([]string, len(p.Export.Presets))
 	copy(presets, p.Export.Presets)
 
@@ -68,129 +118,115 @@ func Configure(store *store.Store, p *project.Project, filter Filter) (c Compose
 	godotTarget := "/opt/godot-" + p.Godot.String()
 	exportTemplateSource := p.Godot.ExportTemplatesPath()
 
-	if len(p.Export.Variants) == 0 {
-		hasOnly := len(p.Export.Only) != 0
-		hasFilter := len(filter) != 0
+	// Start by creating a prospective service per preset.
 
-		if hasOnly || hasFilter {
-			slices.Sort(presets)
+	hasVariants := len(p.Export.Variants) != 0
+	hasOnly := len(p.Export.Only) != 0
+	hasFilter := !hasVariants && (len(filter) != 0)
+	// We deal with filtering later if using variants.
 
-			if hasOnly {
-				presets = intersect(presets, p.Export.Only)
-			}
-			if hasFilter {
-				f := make([]string, len(filter))
-				for i, ff := range filter {
-					f[i] = ff[1]
-				}
-				presets = intersect(presets, f)
-			}
+	if hasOnly || hasFilter {
+		slices.Sort(presets)
+
+		if hasOnly {
+			presets = intersect(presets, p.Export.Only)
 		}
-
-		c.Services = make(map[string]Service, len(presets))
-		for _, pr := range presets {
-			s := Service{}
-			s.Image = Tag
-			s.Volumes = []Volume{
-				{
-					Type:     "bind",
-					Source:   godotSource,
-					Target:   godotTarget,
-					ReadOnly: true,
-				},
-				{
-					Type:     "bind",
-					Source:   exportTemplateSource,
-					Target:   "/root/.local/share/godot/export_templates",
-					ReadOnly: true,
-				},
-				{
-					Type:     "bind",
-					Source:   p.Src,
-					Target:   "/srv/src-ro",
-					ReadOnly: true,
-				},
-				{
-					Type:   "bind",
-					Source: p.Export.Dist,
-					Target: "/srv/dist",
-					Bind: Bind{
-						CreateHostPath: true,
-						SELinux:        "z",
-					},
-				},
-			}
-
-			// TODO proper config here - atm we can only append short-format
-			// bind-mount volumes. In order to do this, we'll need to implement
-			// array handling in the project TOML loader and move the Volume and
-			// Bind structs there.
-			for _, str := range p.Export.Volumes {
-				volume := Volume{
-					Type: "bind",
-					Bind: Bind{
-						CreateHostPath: true,
-					},
-				}
-
-				split := strings.Split(str, ":")
-
-				switch len(split) {
-				case 2, 3: // OK
-				default:
-					panic([]any{"Unknown volume format", str})
-				}
-
-				if len(split) == 3 {
-					flags := strings.Split(split[2], ",")
-					for _, flag := range flags {
-						switch flag {
-						case "z", "Z":
-							volume.Bind.SELinux = flag
-						case "ro":
-							volume.ReadOnly = true
-						default:
-							panic([]any{"Unimplemented volume flag", flag})
-						}
-					}
-				}
-
-				volume.Source = split[0]
-				switch volume.Source {
-				case ".", "/": // OK
-				default:
-					panic([]any{"Non bind mount volumes not yet implemented"})
-				}
-
-				volume.Target = split[1]
-				if volume.Target[0] != '/' {
-					panic([]any{"Bind mount target must be an absolute path", volume.Target})
-				}
-
-				s.Volumes = append(s.Volumes, volume)
-			}
-
-			s.Environment = Environment{
-				ExportPreset:  pr,
-				ExportVariant: "",
-				ScriptPre:     p.Export.Scripts.Pre,
-				ScriptPost:    p.Export.Scripts.Post,
-			}
-			c.Services[pr] = s
+		if hasFilter {
+			presets = intersect(presets, filter)
 		}
 	}
 
-	// for k, v := range p.Export.Variants {
-	// 	only := make(map[string]bool)
-	// 	useOnly := false
-	// 	if len(filter) != 0 {
-	// 		useOnly = true
-	// 		for _, e := range filter {
-	// 			only
-	// 		}
-	// 	}
-	// }
+	presetServices := make(map[string]Service, len(presets))
+	for _, pr := range presets {
+		s := Service{}
+		s.Image = Tag
+		s.Volumes = []Volume{
+			{
+				Type:     "bind",
+				Source:   godotSource,
+				Target:   godotTarget,
+				ReadOnly: true,
+			},
+			{
+				Type:     "bind",
+				Source:   exportTemplateSource,
+				Target:   "/root/.local/share/godot/export_templates",
+				ReadOnly: true,
+			},
+			{
+				Type:     "bind",
+				Source:   p.Src,
+				Target:   "/srv/src-ro",
+				ReadOnly: true,
+			},
+			{
+				Type:   "bind",
+				Source: p.Export.Dist,
+				Target: "/srv/dist",
+				Bind: Bind{
+					CreateHostPath: true,
+					SELinux:        "z",
+				},
+			},
+		}
 
-	// TODO
+		for _, str := range p.Export.Volumes {
+			s.Volumes = append(s.Volumes, parseVolume(str))
+		}
+
+		s.Environment = Environment{
+			ExportPreset:  pr,
+			ExportVariant: "",
+			ScriptPre:     p.Export.Scripts.Pre,
+			ScriptPost:    p.Export.Scripts.Post,
+		}
+		presetServices[pr] = s
+	}
+
+	// At this point, we have everything we need for a no-variants config.
+	if len(p.Export.Variants) == 0 {
+		c.Services = presetServices
+		return
+	}
+
+	// Otherwise, we have variants - so we need to create a build matrix.
+
+	c.Services = make(
+		map[string]Service,
+		len(p.Export.Variants)*len(p.Export.Presets),
+	)
+
+	hasFilter = len(filter) != 0
+
+	for variantName, variant := range p.Export.Variants {
+		for preset, s := range presetServices {
+			if !slices.Contains(variant.Only, preset) {
+				continue
+			}
+			if hasFilter {
+				// TODO error on filter args that don't hit anything.
+				cell := fmt.Sprintf("%s:%s", variantName, preset)
+				if !slices.Contains(filter, cell) {
+					continue
+				}
+			}
+
+			for _, str := range p.Export.Volumes {
+				s.Volumes = append(s.Volumes, parseVolume(str))
+			}
+
+			s.Environment.ExportVariant = variantName
+			if variant.Scripts.Pre != "" {
+				s.Environment.ScriptPre = variant.Scripts.Pre
+			}
+			if variant.Scripts.Post != "" {
+				s.Environment.ScriptPost = variant.Scripts.Post
+			}
+
+			sName := fmt.Sprintf("%s_%s", variantName, preset)
+			c.Services[sName] = s
+		}
+	}
+
 	return
 }
