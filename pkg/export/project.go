@@ -3,8 +3,8 @@ package export
 import (
 	"slices"
 	"sort"
+	"strings"
 
-	"github.com/adrg/xdg"
 	"github.com/starriver/gobbo/pkg/project"
 	"github.com/starriver/gobbo/pkg/store"
 )
@@ -25,16 +25,16 @@ type Service struct {
 }
 
 type Volume struct {
-	Type string
-	Source string
-	Target string
+	Type     string
+	Source   string
+	Target   string
 	ReadOnly bool
-	Bind Bind `yaml:",omitempty"`
+	Bind     Bind `yaml:",omitempty"`
 }
 
 type Bind struct {
-	CreateHostPath `yaml:",omitempty"`
-	SELinux string `yaml:"selinux,omitempty"`
+	CreateHostPath bool   `yaml:",omitempty"`
+	SELinux        string `yaml:"selinux,omitempty"`
 }
 
 type Environment struct {
@@ -93,41 +93,88 @@ func Configure(store *store.Store, p *project.Project, filter Filter) (c Compose
 			s.Image = Tag
 			s.Volumes = []Volume{
 				{
-					Type: "bind",
-					Source: godotSource,
-					Target: godotTarget,
+					Type:     "bind",
+					Source:   godotSource,
+					Target:   godotTarget,
 					ReadOnly: true,
 				},
 				{
-					Type: "bind",
-					Source: exportTemplateSource,
-					Target: "/root/.local/share/godot/export_templates",
+					Type:     "bind",
+					Source:   exportTemplateSource,
+					Target:   "/root/.local/share/godot/export_templates",
 					ReadOnly: true,
 				},
 				{
-					Type: "bind",
-					Source: p.Src,
-					Target: "/srv/src-ro",
+					Type:     "bind",
+					Source:   p.Src,
+					Target:   "/srv/src-ro",
 					ReadOnly: true,
 				},
 				{
-					Type: "bind",
+					Type:   "bind",
 					Source: p.Export.Dist,
 					Target: "/srv/dist",
 					Bind: Bind{
 						CreateHostPath: true,
-						SELinux: "z",
+						SELinux:        "z",
 					},
 				},
 			}
 
-			for _, volume // TODO
+			// TODO proper config here - atm we can only append short-format
+			// bind-mount volumes. In order to do this, we'll need to implement
+			// array handling in the project TOML loader and move the Volume and
+			// Bind structs there.
+			for _, str := range p.Export.Volumes {
+				volume := Volume{
+					Type: "bind",
+					Bind: Bind{
+						CreateHostPath: true,
+					},
+				}
+
+				split := strings.Split(str, ":")
+
+				switch len(split) {
+				case 2, 3: // OK
+				default:
+					panic([]any{"Unknown volume format", str})
+				}
+
+				if len(split) == 3 {
+					flags := strings.Split(split[2], ",")
+					for _, flag := range flags {
+						switch flag {
+						case "z", "Z":
+							volume.Bind.SELinux = flag
+						case "ro":
+							volume.ReadOnly = true
+						default:
+							panic([]any{"Unimplemented volume flag", flag})
+						}
+					}
+				}
+
+				volume.Source = split[0]
+				switch volume.Source {
+				case ".", "/": // OK
+				default:
+					panic([]any{"Non bind mount volumes not yet implemented"})
+				}
+
+				volume.Target = split[1]
+				if volume.Target[0] != '/' {
+					panic([]any{"Bind mount target must be an absolute path", volume.Target})
+				}
+
+				s.Volumes = append(s.Volumes, volume)
+			}
 
 			s.Environment = Environment{
 				ExportPreset:  pr,
 				ExportVariant: "",
-				ScriptPre: p.Export.Scripts.Pre,
-				ScriptPost: p.Export.Scripts.Post,
+				ScriptPre:     p.Export.Scripts.Pre,
+				ScriptPost:    p.Export.Scripts.Post,
 			}
 			c.Services[pr] = s
 		}
@@ -143,4 +190,7 @@ func Configure(store *store.Store, p *project.Project, filter Filter) (c Compose
 	// 		}
 	// 	}
 	// }
+
+	// TODO
+	return
 }

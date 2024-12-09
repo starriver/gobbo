@@ -22,7 +22,7 @@ type Project struct {
 		Presets  []string
 		Only     []string
 		Dist     string
-		Volumes  map[string]string
+		Volumes  []string
 		Scripts  Scripts
 		Variants map[string]*Variant
 	}
@@ -30,7 +30,7 @@ type Project struct {
 
 type Variant struct {
 	Only     []string
-	Volumes  map[string]string
+	Volumes  []string
 	Scripts  Scripts
 	Elective bool
 }
@@ -121,7 +121,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	popString := popFunc[string](root, pushErrorf)
 	popBool := popFunc[bool](root, pushErrorf)
 	popStringArray := popFunc[[]string](root, pushErrorf)
-	popStringMap := popFunc[map[string]string](root, pushErrorf)
+	// popStringMap := popFunc[map[string]string](root, pushErrorf)
 
 	p = &Project{}
 
@@ -156,7 +156,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		// Directory doesn't need to exist before export.
 	}
 
-	p.Export.Volumes, _ = popStringMap("export.volumes", false)
+	p.Export.Volumes, _ = popStringArray("export.volumes", false)
 
 	p.Export.Scripts.Pre, _ = popString("export.scripts.pre", false)
 	p.Export.Scripts.Post, _ = popString("export.scripts.post", false)
@@ -178,7 +178,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		prefix := fmt.Sprintf("export.%s.", k)
 
 		v.Only, _ = popStringArray(prefix+"only", false)
-		v.Volumes, _ = popStringMap(prefix+"volumes", false)
+		v.Volumes, _ = popStringArray(prefix+"volumes", false)
 		v.Scripts.Pre, _ = popString(prefix+"scripts.pre", false)
 		v.Scripts.Post, _ = popString(prefix+"scripts.post", false)
 		v.Elective, _ = popBool(prefix+"elective", false)
