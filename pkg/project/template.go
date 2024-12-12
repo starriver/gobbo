@@ -11,12 +11,13 @@ import (
 	"text/template"
 
 	"github.com/starriver/gobbo/pkg/godot"
+	"github.com/starriver/gobbo/pkg/store"
 )
 
 //go:embed template/*
 var defaultTemplate embed.FS
 
-func Generate(src, dest string, godot *godot.Official, bare bool) error {
+func Generate(src, dest string, store *store.Store, godot *godot.Official, bare bool) error {
 	var srcFS fs.FS = defaultTemplate
 	srcRoot := "template"
 	if src != "" {
@@ -65,7 +66,7 @@ func Generate(src, dest string, godot *godot.Official, bare bool) error {
 		return err
 	}
 
-	tempDir, err := os.MkdirTemp("", "gobbo-template")
+	tempDir, err := os.MkdirTemp(store.Join("tmp"), "gobbo-template")
 	if err != nil {
 		return fmt.Errorf("couldn't create temporary directory: %v", err)
 	}

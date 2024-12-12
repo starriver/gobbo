@@ -69,7 +69,11 @@ var New = charli.Command{
 			return
 		}
 
-		project.Generate("", path, godot, bare)
+		err := project.Generate("", path, store, godot, bare)
+		if err != nil {
+			r.Error(err)
+			return
+		}
 
 		glog.Infof("Created '%s'", path)
 	},
