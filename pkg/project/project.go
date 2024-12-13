@@ -157,7 +157,7 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	p.Export.Only, _ = popStringArray("export.only", false)
 
 	s, ok = popString("export.dist", false)
-	if ok {
+	if !ok {
 		s = "dist"
 	}
 	p.Export.Dist = filepath.Join(filepath.Dir(path), s)
