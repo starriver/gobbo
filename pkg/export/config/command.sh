@@ -28,7 +28,7 @@ fi
 FILENAME="$FILENAME-$EXPORT_PRESET"
 
 # Do the export.
-"$GODOT_PATH" --headless --verbose "$EXPORT_FLAG" "$EXPORT_PRESET" "/srv/dist/$FILENAME.$EXTENSION"
+"$GODOT_PATH" --headless "$EXPORT_FLAG" "$EXPORT_PRESET" "/srv/dist/$FILENAME.$EXTENSION"
 
 # Zip output if specified.
 if [ "$ZIP" == 1 ] && [ "$EXTENSION" != zip ]; then

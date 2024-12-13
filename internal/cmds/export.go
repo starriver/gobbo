@@ -113,7 +113,8 @@ var Export = charli.Command{
 
 		glog.Info("Importing assets...")
 		godotPath := store.Join("bin", godot.BinaryPath(&store.Platform))
-		cmd := exec.Command(godotPath, "--headless", "--import", project.GodotConfigPath())
+		cmd := exec.Command(godotPath, "--no-header", "--headless", "--import", project.GodotConfigPath())
+		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		glog.Debugf("%s %v", cmd.Path, cmd.Args)
 
@@ -125,6 +126,5 @@ var Export = charli.Command{
 
 		glog.Info("Starting exports...")
 		export.Run(c)
-
 	},
 }
