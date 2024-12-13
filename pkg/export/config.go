@@ -41,13 +41,16 @@ type Bind struct {
 }
 
 type Environment struct {
-	GodotPath      string `yaml:"GODOT_PATH"`
-	ProjectVersion string `yaml:"PROJECT_VERSION"`
-	ExportPreset   string `yaml:"EXPORT_PRESET"`
-	ExportVariant  string `yaml:"EXPORT_VARIANT"`
-	ExportDebug    string `yaml:"EXPORT_DEBUG"`
-	ScriptPre      string `yaml:"SCRIPT_PRE"`
-	ScriptPost     string `yaml:"SCRIPT_POST"`
+	GodotPath            string `yaml:"GODOT_PATH"`
+	GodotSettingsVersion string `yaml:"GODOT_SETTINGS_VERSION"`
+	ProjectVersion       string `yaml:"PROJECT_VERSION"`
+	ExportPreset         string `yaml:"EXPORT_PRESET"`
+	ExportVariant        string `yaml:"EXPORT_VARIANT"`
+	ExportDebug          string `yaml:"EXPORT_DEBUG"`
+	Extension            string `yaml:"EXTENSION"`
+	ScriptPre            string `yaml:"SCRIPT_PRE"`
+	ScriptPost           string `yaml:"SCRIPT_POST"`
+	Zip                  string `yaml:"ZIP"`
 }
 
 // Stolen from: https://github.com/juliangruber/go-intersect/
@@ -115,9 +118,22 @@ func parseVolume(s string) Volume {
 	return v
 }
 
+var platformExts = make(map[string]string, 6)
+
+func init() {
+	platformExts["Android"] = "apk"
+	platformExts["iOS"] = "ipa"
+	platformExts["Linux"] = ""
+	platformExts["macOS"] = "app"
+	platformExts["Web"] = "html"
+	platformExts["Windows Desktop"] = "exe"
+}
+
 func Configure(store *store.Store, p *project.Project, debug bool, filter []string) (c ComposeConfig) {
-	presets := make([]string, len(p.Export.Presets))
-	copy(presets, p.Export.Presets)
+	presetNames := make([]string, len(p.Export.Presets))
+	for i, p := range p.Export.Presets {
+		presetNames[i] = p.Name
+	}
 
 	godotSource := store.Join("bin", p.Godot.BinaryPath(&store.Platform))
 	godotTarget := "/opt/godot-" + p.Godot.String()
@@ -131,18 +147,31 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 	// We deal with filtering later if using variants.
 
 	if hasOnly || hasFilter {
-		slices.Sort(presets)
+		slices.Sort(presetNames)
 
 		if hasOnly {
-			presets = intersect(presets, p.Export.Only)
+			presetNames = intersect(presetNames, p.Export.Only)
 		}
 		if hasFilter {
-			presets = intersect(presets, filter)
+			presetNames = intersect(presetNames, filter)
 		}
 	}
 
-	presetServices := make(map[string]Service, len(presets))
-	for _, pr := range presets {
+	// This is the 4.x minor version string to be used for the editor
+	// settings filename.
+	settingsVersion := fmt.Sprintf("4.%d", p.Godot.Minor)
+
+	zip := "0"
+	if p.Export.Zip {
+		zip = "1"
+	}
+
+	presetServices := make(map[string]Service, len(presetNames))
+	for _, pr := range p.Export.Presets {
+		if !slices.Contains(presetNames, pr.Name) {
+			continue
+		}
+
 		s := Service{}
 		s.Image = Tag
 		s.Volumes = []Volume{
@@ -168,7 +197,7 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 			// Volumes[3] is hard-coded.
 			{
 				Type:   "bind",
-				Source: filepath.Join(p.Export.Dist, pr),
+				Source: filepath.Join(p.Export.Dist, pr.Name),
 				Target: "/srv/dist",
 				Bind: Bind{
 					CreateHostPath: true,
@@ -186,17 +215,26 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 			debugStr = "1"
 		}
 
-		s.Environment = Environment{
-			GodotPath:      godotTarget,
-			ProjectVersion: p.Version,
-			ExportPreset:   pr,
-			ExportVariant:  "",
-			ExportDebug:    debugStr,
-			ScriptPre:      p.Export.Scripts.Pre,
-			ScriptPost:     p.Export.Scripts.Post,
+		// Default to zip extension if this is some platform we've not heard of
+		ext := "zip"
+		if e, ok := platformExts[pr.Platform]; ok {
+			ext = e
 		}
 
-		presetServices[slug.Make(pr)] = s
+		s.Environment = Environment{
+			GodotPath:            godotTarget,
+			GodotSettingsVersion: settingsVersion,
+			ProjectVersion:       p.Version,
+			ExportPreset:         pr.Name,
+			ExportVariant:        "",
+			ExportDebug:          debugStr,
+			Extension:            ext,
+			ScriptPre:            p.Export.Scripts.Pre,
+			ScriptPost:           p.Export.Scripts.Post,
+			Zip:                  zip,
+		}
+
+		presetServices[slug.Make(pr.Name)] = s
 	}
 
 	// At this point, we have everything we need for a no-variants config.
@@ -216,15 +254,20 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 
 	for variantName, variant := range p.Export.Variants {
 		for preset, s := range presetServices {
-			if !slices.Contains(variant.Only, preset) {
+			if (len(variant.Only) != 0) && !slices.Contains(variant.Only, preset) {
 				continue
 			}
+
 			if hasFilter {
 				// TODO error on filter args that don't hit anything.
 				cell := fmt.Sprintf("%s:%s", variantName, preset)
 				if !slices.Contains(filter, cell) {
 					continue
 				}
+			} else if variant.Elective {
+				// Elective variants are only configured when they're explicitly
+				// specified in the filter.
+				continue
 			}
 
 			// Make dist one level deeper.

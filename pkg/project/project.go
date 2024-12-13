@@ -19,13 +19,19 @@ type Project struct {
 	Version string
 
 	Export struct {
-		Presets  []string
+		Presets  []Preset
 		Only     []string
 		Dist     string
+		Zip      bool
 		Volumes  []string
 		Scripts  Scripts
 		Variants map[string]*Variant
 	}
+}
+
+type Preset struct {
+	Name     string
+	Platform string
 }
 
 type Variant struct {
@@ -156,6 +162,8 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		// Directory doesn't need to exist before export.
 	}
 
+	p.Export.Zip, _ = popBool("export.zip", false)
+
 	p.Export.Volumes, _ = popStringArray("export.volumes", false)
 
 	p.Export.Scripts.Pre, _ = popString("export.scripts.pre", false)
@@ -255,7 +263,19 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 			sectionRe := regexp.MustCompile("^\\[preset\\.[0-9]+\\]$")
 
 			s := bufio.NewScanner(f)
-			scanSection := false
+
+			// Cheeky bitfield
+			want := 0
+			const name = 1
+			const platform = 2
+
+			preset := Preset{}
+
+			pushPreset := func() {
+				if want == 0 {
+					p.Export.Presets = append(p.Export.Presets, preset)
+				}
+			}
 
 			for s.Scan() {
 				t := s.Text()
@@ -263,23 +283,35 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 					continue
 				}
 
-				if scanSection {
-					if strings.HasPrefix(t, "name=\"") {
-						from := strings.Index(t, "\"") + 1
-						to := strings.LastIndex(t, "\"")
-						v := t[from:to]
-						if v != "" {
-							p.Export.Presets = append(p.Export.Presets, v)
-							presetMap[v] = true
-						}
-						scanSection = false
+				if ((want & name) != 0) && strings.HasPrefix(t, "name=\"") {
+					from := strings.Index(t, "\"") + 1
+					to := strings.LastIndex(t, "\"")
+					v := t[from:to]
+					if v != "" {
+						preset.Name = v
+						presetMap[v] = true
+						want ^= name
+						pushPreset()
+						continue
 					}
-					continue
+				}
+
+				if ((want & platform) != 0) && strings.HasPrefix(t, "platform=\"") {
+					from := strings.Index(t, "\"") + 1
+					to := strings.LastIndex(t, "\"")
+					v := t[from:to]
+					if v != "" {
+						preset.Platform = v
+						want ^= platform
+						pushPreset()
+						continue
+					}
 				}
 
 				// Are we starting a [preset.*] section?
 				if sectionRe.MatchString(t) {
-					scanSection = true
+					want = name | platform
+					preset = Preset{}
 				}
 			}
 		}

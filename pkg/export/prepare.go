@@ -3,8 +3,10 @@ package export
 import (
 	"embed"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/starriver/gobbo/pkg/glog"
 )
@@ -66,11 +68,33 @@ func BuildImage() error {
 	}
 
 	glog.Infof("Building export image with tag '%s'", Tag)
-	cmd = command("build", "-t", Tag, "-")
 
-	// We know this file is embedded, so ignoring error here.
-	f, _ := config.Open("config/Dockerfile")
-	cmd.Stdin = f
+	// Create a temporary build context.
+	ctx, err := os.MkdirTemp("", "gobbo-image-build")
+	if err != nil {
+		return err
+	}
 
+	// Ignoring error here, we know this exists:
+	files, _ := config.ReadDir("config")
+
+	// Copy the embedFS into the build context.
+	for _, f := range files {
+		name := f.Name()
+		src, _ := config.Open(filepath.Join("config", name))
+
+		dest, err := os.OpenFile(filepath.Join(ctx, name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			return err
+		}
+		defer dest.Close()
+
+		_, err = io.Copy(dest, src)
+		if err != nil {
+			return err
+		}
+	}
+
+	cmd = command("build", "-t", Tag, ctx)
 	return cmd.Run()
 }

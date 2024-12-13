@@ -56,3 +56,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 COPY --from=android /opt/android-sdk /opt/android-sdk
 COPY --from=rcedit /opt/rcedit.exe /opt/rcedit.exe
+
+COPY command.sh /opt/command.sh
+COPY editor_settings.tres /opt/editor_settings.tres
+
+CMD [ "/opt/command.sh" ]
