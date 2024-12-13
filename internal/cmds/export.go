@@ -2,10 +2,12 @@ package cmds
 
 import (
 	"os"
+	"os/exec"
 
 	"github.com/starriver/charli"
 	"github.com/starriver/gobbo/internal/opts"
 	"github.com/starriver/gobbo/pkg/export"
+	"github.com/starriver/gobbo/pkg/glog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -108,5 +110,21 @@ var Export = charli.Command{
 			r.Error(err)
 			return
 		}
+
+		glog.Info("Importing assets...")
+		godotPath := store.Join("bin", godot.BinaryPath(&store.Platform))
+		cmd := exec.Command(godotPath, "--headless", "--import", project.GodotConfigPath())
+		cmd.Stderr = os.Stderr
+		glog.Debugf("%s %v", cmd.Path, cmd.Args)
+
+		err = cmd.Run()
+		if err != nil {
+			r.Errorf("Import failed, aborting.")
+			return
+		}
+
+		glog.Info("Starting exports...")
+		export.Run(c)
+
 	},
 }

@@ -16,6 +16,7 @@ import (
 type Project struct {
 	Godot   *godot.Official
 	Src     string
+	Name    string
 	Version string
 
 	Export struct {
@@ -155,12 +156,12 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 
 	p.Export.Only, _ = popStringArray("export.only", false)
 
-	p.Export.Dist = "dist"
 	s, ok = popString("export.dist", false)
 	if ok {
-		p.Export.Dist = s
-		// Directory doesn't need to exist before export.
+		s = "dist"
 	}
+	p.Export.Dist = filepath.Join(filepath.Dir(path), s)
+	// Directory doesn't need to exist before export.
 
 	p.Export.Zip, _ = popBool("export.zip", false)
 
@@ -214,9 +215,19 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 
 		s := bufio.NewScanner(f)
 		appSection := false
+
+		const name = 1
+		const version = 2
+		want := name | version
+
+		p.Name = "untitled"
 		p.Version = "unspecified"
 
 		for s.Scan() {
+			if want == 0 {
+				break
+			}
+
 			t := s.Text()
 			if (len(t) == 0) || (t[0] == ';') {
 				continue
@@ -228,14 +239,26 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 					break
 				}
 
-				if strings.HasPrefix(t, "config/version=\"") {
+				if ((want & name) != 0) && strings.HasPrefix(t, "config/name=\"") {
+					from := strings.Index(t, "\"") + 1
+					to := strings.LastIndex(t, "\"")
+					v := t[from:to]
+					if v != "" {
+						p.Name = v
+					}
+					want ^= name
+					continue
+				}
+
+				if ((want & version) != 0) && strings.HasPrefix(t, "config/version=\"") {
 					from := strings.Index(t, "\"") + 1
 					to := strings.LastIndex(t, "\"")
 					v := t[from:to]
 					if v != "" {
 						p.Version = v
 					}
-					break
+					want ^= version
+					continue
 				}
 			} else if t == "[application]" {
 				appSection = true

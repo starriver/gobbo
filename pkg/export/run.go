@@ -19,5 +19,6 @@ func Run(c *ComposeConfig) error {
 	cmd.Stdin = reader
 
 	err := cmd.Run()
+
 	return err
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/starriver/gobbo/pkg/glog"
 )
@@ -74,6 +75,7 @@ func BuildImage() error {
 	if err != nil {
 		return err
 	}
+	defer os.RemoveAll(ctx)
 
 	// Ignoring error here, we know this exists:
 	files, _ := config.ReadDir("config")
@@ -81,9 +83,14 @@ func BuildImage() error {
 	// Copy the embedFS into the build context.
 	for _, f := range files {
 		name := f.Name()
+
 		src, _ := config.Open(filepath.Join("config", name))
 
-		dest, err := os.OpenFile(filepath.Join(ctx, name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		var mode os.FileMode = 0644
+		if strings.HasSuffix(name, ".sh") {
+			mode = 0755
+		}
+		dest, err := os.OpenFile(filepath.Join(ctx, name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 		if err != nil {
 			return err
 		}

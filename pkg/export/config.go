@@ -43,6 +43,7 @@ type Bind struct {
 type Environment struct {
 	GodotPath            string `yaml:"GODOT_PATH"`
 	GodotSettingsVersion string `yaml:"GODOT_SETTINGS_VERSION"`
+	ProjectName          string `yaml:"PROJECT_NAME"`
 	ProjectVersion       string `yaml:"PROJECT_VERSION"`
 	ExportPreset         string `yaml:"EXPORT_PRESET"`
 	ExportVariant        string `yaml:"EXPORT_VARIANT"`
@@ -129,7 +130,9 @@ func init() {
 	platformExts["Windows Desktop"] = "exe"
 }
 
-func Configure(store *store.Store, p *project.Project, debug bool, filter []string) (c ComposeConfig) {
+func Configure(store *store.Store, p *project.Project, debug bool, filter []string) (c *ComposeConfig) {
+	c = &ComposeConfig{}
+
 	presetNames := make([]string, len(p.Export.Presets))
 	for i, p := range p.Export.Presets {
 		presetNames[i] = p.Name
@@ -224,6 +227,7 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 		s.Environment = Environment{
 			GodotPath:            godotTarget,
 			GodotSettingsVersion: settingsVersion,
+			ProjectName:          p.Name,
 			ProjectVersion:       p.Version,
 			ExportPreset:         pr.Name,
 			ExportVariant:        "",
