@@ -2,6 +2,7 @@ package export
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -30,20 +31,23 @@ type Volume struct {
 	Type     string
 	Source   string
 	Target   string
-	ReadOnly bool
+	ReadOnly bool `yaml:"read_only,omitempty"`
 	Bind     Bind `yaml:",omitempty"`
 }
 
 type Bind struct {
-	CreateHostPath bool   `yaml:",omitempty"`
-	SELinux        string `yaml:"selinux,omitempty"`
+	CreateHostPath bool   `yaml:"create_host_path,omitempty"`
+	SELinux        string `yaml:",omitempty"`
 }
 
 type Environment struct {
-	ExportPreset  string `yaml:"EXPORT_PRESET"`
-	ExportVariant string `yaml:"EXPORT_VARIANT,omitempty"`
-	ScriptPre     string `yaml:"SCRIPT_PRE"`
-	ScriptPost    string `yaml:"SCRIPT_POST"`
+	GodotPath      string `yaml:"GODOT_PATH"`
+	ProjectVersion string `yaml:"PROJECT_VERSION"`
+	ExportPreset   string `yaml:"EXPORT_PRESET"`
+	ExportVariant  string `yaml:"EXPORT_VARIANT"`
+	ExportDebug    string `yaml:"EXPORT_DEBUG"`
+	ScriptPre      string `yaml:"SCRIPT_PRE"`
+	ScriptPost     string `yaml:"SCRIPT_POST"`
 }
 
 // Stolen from: https://github.com/juliangruber/go-intersect/
@@ -111,7 +115,7 @@ func parseVolume(s string) Volume {
 	return v
 }
 
-func Configure(store *store.Store, p *project.Project, filter []string) (c ComposeConfig) {
+func Configure(store *store.Store, p *project.Project, debug bool, filter []string) (c ComposeConfig) {
 	presets := make([]string, len(p.Export.Presets))
 	copy(presets, p.Export.Presets)
 
@@ -160,9 +164,11 @@ func Configure(store *store.Store, p *project.Project, filter []string) (c Compo
 				Target:   "/srv/src-ro",
 				ReadOnly: true,
 			},
+			// nb. this may be modified in the variant config later -
+			// Volumes[3] is hard-coded.
 			{
 				Type:   "bind",
-				Source: p.Export.Dist,
+				Source: filepath.Join(p.Export.Dist, pr),
 				Target: "/srv/dist",
 				Bind: Bind{
 					CreateHostPath: true,
@@ -175,11 +181,19 @@ func Configure(store *store.Store, p *project.Project, filter []string) (c Compo
 			s.Volumes = append(s.Volumes, parseVolume(str))
 		}
 
+		debugStr := "0"
+		if debug {
+			debugStr = "1"
+		}
+
 		s.Environment = Environment{
-			ExportPreset:  pr,
-			ExportVariant: "",
-			ScriptPre:     p.Export.Scripts.Pre,
-			ScriptPost:    p.Export.Scripts.Post,
+			GodotPath:      godotTarget,
+			ProjectVersion: p.Version,
+			ExportPreset:   pr,
+			ExportVariant:  "",
+			ExportDebug:    debugStr,
+			ScriptPre:      p.Export.Scripts.Pre,
+			ScriptPost:     p.Export.Scripts.Post,
 		}
 
 		presetServices[slug.Make(pr)] = s
@@ -212,6 +226,11 @@ func Configure(store *store.Store, p *project.Project, filter []string) (c Compo
 					continue
 				}
 			}
+
+			// Make dist one level deeper.
+			s.Volumes[3].Source = filepath.Join(
+				p.Export.Dist, variantName, preset,
+			)
 
 			for _, str := range p.Export.Volumes {
 				s.Volumes = append(s.Volumes, parseVolume(str))

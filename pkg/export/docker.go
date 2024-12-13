@@ -21,6 +21,7 @@ var cliPath = "docker"
 
 // Create a Docker command and show stderr.
 func command(args ...string) *exec.Cmd {
+	glog.Debugf("Export: running %v", args)
 	cmd := exec.Command(cliPath, args...)
 	cmd.Stderr = os.Stderr
 	return cmd
@@ -50,9 +51,7 @@ func CheckEnvironment() error {
 }
 
 func BuildImage() error {
-	const tagRef = "reference=" + Tag
-
-	cmd := command("images", "-qf", tagRef)
+	cmd := command("images", "-qf", "reference="+Tag)
 	output, err := cmd.Output()
 	if err != nil {
 		return err
@@ -61,15 +60,16 @@ func BuildImage() error {
 	if len(output) != 0 {
 		glog.Debugf(
 			"Image with tag '%s' already built: %s",
-			tagRef, string(output),
+			Tag, string(output),
 		)
 		return nil
 	}
 
-	cmd = command("build", "-t", tagRef, "-")
+	glog.Infof("Building export image with tag '%s'", Tag)
+	cmd = command("build", "-t", Tag, "-")
 
 	// We know this file is embedded, so ignoring error here.
-	f, _ := config.Open("Dockerfile")
+	f, _ := config.Open("config/Dockerfile")
 	cmd.Stdin = f
 
 	return cmd.Run()

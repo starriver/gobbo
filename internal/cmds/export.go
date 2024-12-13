@@ -35,12 +35,27 @@ var Export = charli.Command{
 		opts.Project,
 
 		// TODO: -j/--jobs
+		// compose up will require that we start all containers immediately, but
+		// we can signal them to actually start their builds by eg. placing a
+		// file.
 
 		{
 			Short:    'n',
 			Long:     "no-install",
 			Flag:     true,
 			Headline: "Abort if dependencies are missing",
+		},
+		{
+			Short:    'd',
+			Long:     "debug",
+			Flag:     true,
+			Headline: "Build debug exports",
+		},
+		{
+			Short:    'c',
+			Long:     "compose",
+			Flag:     true,
+			Headline: "Output Docker Compose config then exit",
 		},
 	},
 	Args: charli.Args{
@@ -71,17 +86,27 @@ var Export = charli.Command{
 			return
 		}
 
-		// TODO remove
-		if project != nil {
-		}
-
 		err = export.CheckEnvironment()
 		if err != nil {
 			r.Error(err)
 			return
 		}
 
-		c := export.Configure(store, project, r.Args)
-		yaml.NewEncoder(os.Stdout).Encode(c)
+		debug := r.Options["d"].IsSet
+		c := export.Configure(store, project, debug, r.Args)
+
+		if r.Options["c"].IsSet {
+			err = yaml.NewEncoder(os.Stdout).Encode(c)
+			if err != nil {
+				r.Error(err)
+			}
+			return
+		}
+
+		err = export.BuildImage()
+		if err != nil {
+			r.Error(err)
+			return
+		}
 	},
 }
