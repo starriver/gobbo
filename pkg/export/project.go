@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/gosimple/slug"
 	"github.com/starriver/gobbo/pkg/project"
 	"github.com/starriver/gobbo/pkg/store"
 )
@@ -180,7 +181,8 @@ func Configure(store *store.Store, p *project.Project, filter []string) (c Compo
 			ScriptPre:     p.Export.Scripts.Pre,
 			ScriptPost:    p.Export.Scripts.Post,
 		}
-		presetServices[pr] = s
+
+		presetServices[slug.Make(pr)] = s
 	}
 
 	// At this point, we have everything we need for a no-variants config.
@@ -223,7 +225,7 @@ func Configure(store *store.Store, p *project.Project, filter []string) (c Compo
 				s.Environment.ScriptPost = variant.Scripts.Post
 			}
 
-			sName := fmt.Sprintf("%s_%s", variantName, preset)
+			sName := fmt.Sprintf("%s_%s", slug.Make(variantName), preset)
 			c.Services[sName] = s
 		}
 	}

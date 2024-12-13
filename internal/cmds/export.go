@@ -1,9 +1,12 @@
 package cmds
 
 import (
+	"os"
+
 	"github.com/starriver/charli"
 	"github.com/starriver/gobbo/internal/opts"
 	"github.com/starriver/gobbo/pkg/export"
+	"gopkg.in/yaml.v3"
 )
 
 const exportDesc = `
@@ -77,5 +80,8 @@ var Export = charli.Command{
 			r.Error(err)
 			return
 		}
+
+		c := export.Configure(store, project, r.Args)
+		yaml.NewEncoder(os.Stdout).Encode(c)
 	},
 }

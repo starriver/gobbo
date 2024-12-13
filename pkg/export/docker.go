@@ -11,7 +11,7 @@ import (
 
 // Very bespoke Docker Compose CLI client.
 
-const Tag = "reference=starriver.run/gobbo:v1"
+const Tag = "starriver.run/gobbo:v1"
 
 //go:embed config/*
 var config embed.FS
@@ -50,7 +50,9 @@ func CheckEnvironment() error {
 }
 
 func BuildImage() error {
-	cmd := command("images", "-qf", Tag)
+	const tagRef = "reference=" + Tag
+
+	cmd := command("images", "-qf", tagRef)
 	output, err := cmd.Output()
 	if err != nil {
 		return err
@@ -59,12 +61,12 @@ func BuildImage() error {
 	if len(output) != 0 {
 		glog.Debugf(
 			"Image with tag '%s' already built: %s",
-			Tag, string(output),
+			tagRef, string(output),
 		)
 		return nil
 	}
 
-	cmd = command("build", "-t", Tag, "-")
+	cmd = command("build", "-t", tagRef, "-")
 
 	// We know this file is embedded, so ignoring error here.
 	f, _ := config.Open("Dockerfile")
