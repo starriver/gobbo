@@ -6,29 +6,52 @@ This is heavily WIP.
 
 ## Current `gobbo.toml` schema
 
+`godot` is the only required key. Defaults are listed here.
+
 ```toml
-godot = "4.3"  # required
-src = "src"    # optional
+godot = "4.3"
+src = "src"
+
+[export]
+only = []
+dist = "dist"
+zip = false
+volumes = []
+scripts.pre = ""
+scripts.post = ""
+
+[export.variant]
+only = []
+volumes = []
+scripts.pre = ""
+scripts.post = ""
+elective = false
 ```
 
 - `godot` is the Godot version to use. Pre-release versions can be accessed with a suffix, eg. `-beta1`. Currently only official builds are supported, build-from-source is planned.
-- `src` is the path of the Godot project root (ie. containing `project.godot`). If omitted, defaults to `src/`.
+- `src` is the path of the Godot project root (ie. containing `project.godot`).
 
-## Planned export stuff
+### Export table
 
-By default, running `gobbo export` will build all exports in parallel and output them to `dist/`. They'll default to release builds, but `--debug` will be able to be specified.
+This configures the Gobbo exporter. You should still set up your export presets (in `src/export_presets.cfg`) as normal.
 
-To implement export matrices, `export` table(s) will be used in `gobbo.toml`. Note that this is to be used *with* Godot's `export_presets.cfg`.
+- `only` filters the presets to export.
+- `dist` is the path of the finished exports. When exporting, it will be created if it doesn't exist.
+- `zip` automatically zips all exports if true. Otherwise, exports will be in `dist` subdirectories.
+- `volumes` allows for [short-form Docker volumes](https://docs.docker.com/reference/cli/docker/container/run/#volume) to be mounted for all build containers. Currently, only the `z`, `Z` and `ro` flags are supported.
+- `scripts.*` specifies Bash script hooks to be executed before (`pre`) and after (`post`) the Godot export has executed.
 
-`[export]` will be used by itself to configure global options:
+#### Variants
 
-```toml
-[export]
-only = ["windows", "linux"] # Specify only some exports to be built
-dist = "my-dist-dir/" # Change dist/ path
-```
+Export **variants** can be specified, which will enable a two-dimensional build matrix (presets vs. variants). Variants are named after their tables.
 
-Subtables will be used to create a matrix. For example, to produce a matrix of builds for Itch and Steam:
+For each variant's table:
+
+- `only` and `volumes` are merged with their respective values in `[export]`.
+- `scripts.*` will **override** their respective values in `[export]`.
+- `elective`, if true, disables the variant unless it's explicitly specified in the `gobbo export` command.
+
+For example, to produce a matrix of builds for Itch and Steam:
 
 ```toml
 [export.itch]
@@ -37,29 +60,15 @@ Subtables will be used to create a matrix. For example, to produce a matrix of b
 
 [export.steam]
 only = ["windows", "macos", "linux"]
-volumes = { "./steam" = "/opt/steam" } # Mount files into the container
-scripts = { # Run scripts before/after the Godot export.
+volumes = { "./steam" = "/opt/steam" }
+scripts = {
 	pre = "/opt/steam/prepare.sh"
 	post = "/opt/steam/finalise.sh"
 }
-elective = true # If set, disables this matrix row unless it's explicitly
-                # specified (eg. `gobbo export itch steam`)
+elective = true
 ```
 
-## Planned package management stuff
-
-To implement package management, a `dependencies` table will be used in `gobbo.toml`, in a similar format to `go.mod`:
-
-```toml
-[dependencies]
-"gitlab.com/snoopdouglas/abfi" = "v3.0.0"
-```
-
-The above will pull the abfi plugin into `src/.gobbo/abfi`. Any of abfi's dependencies will also go into `src/.gobbo`.
-
-Version resolution will likely take some cues from Terraform, as Godot plugins tend to do lots of global things - and it's quite rare for plugins to depend on one another right now. If two different major versions of the same package are required, just error.
-
-We'll always use the highest-specified version of a package from the project and its dependencies.
+---
 
 ## License
 
