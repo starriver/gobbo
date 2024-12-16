@@ -100,6 +100,11 @@ var Export = charli.Command{
 			return
 		}
 
+		if len(project.Export.Presets) == 0 {
+			r.Errorf("No export presets configured.")
+			return
+		}
+
 		err = export.CheckEnvironment()
 		if err != nil {
 			r.Error(err)
