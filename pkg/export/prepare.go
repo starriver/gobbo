@@ -53,19 +53,22 @@ func CheckEnvironment() error {
 	return nil
 }
 
-func BuildImage() error {
-	cmd := command("images", "-qf", "reference="+Tag)
-	output, err := cmd.Output()
-	if err != nil {
-		return err
-	}
+func BuildImage(always bool) error {
+	var cmd *exec.Cmd
+	if !always {
+		cmd = command("images", "-qf", "reference="+Tag)
+		output, err := cmd.Output()
+		if err != nil {
+			return err
+		}
 
-	if len(output) != 0 {
-		glog.Debugf(
-			"Image with tag '%s' already built: %s",
-			Tag, string(output),
-		)
-		return nil
+		if len(output) != 0 {
+			glog.Debugf(
+				"Image with tag '%s' already built: %s",
+				Tag, string(output),
+			)
+			return nil
+		}
 	}
 
 	glog.Infof("Building export image with tag '%s'", Tag)

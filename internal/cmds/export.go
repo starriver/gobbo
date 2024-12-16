@@ -48,6 +48,18 @@ var Export = charli.Command{
 			Headline: "Abort if dependencies are missing",
 		},
 		{
+			Short:    'm',
+			Long:     "no-import",
+			Flag:     true,
+			Headline: "Don't import assets before exporting",
+		},
+		{
+			Short:    'r',
+			Long:     "rebuild-image",
+			Flag:     true,
+			Headline: "Always rebuild exporter Docker image",
+		},
+		{
 			Short:    'd',
 			Long:     "debug",
 			Flag:     true,
@@ -105,23 +117,26 @@ var Export = charli.Command{
 			return
 		}
 
-		err = export.BuildImage()
+		alwaysRebuild := r.Options["r"].IsSet
+		err = export.BuildImage(alwaysRebuild)
 		if err != nil {
 			r.Error(err)
 			return
 		}
 
-		glog.Info("Importing assets...")
-		godotPath := store.Join("bin", godot.BinaryPath(&store.Platform))
-		cmd := exec.Command(godotPath, "--no-header", "--headless", "--import", project.GodotConfigPath())
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		glog.Debugf("%s %v", cmd.Path, cmd.Args)
+		if !r.Options["m"].IsSet {
+			glog.Info("Importing assets...")
+			godotPath := store.Join("bin", godot.BinaryPath(&store.Platform))
+			cmd := exec.Command(godotPath, "--no-header", "--headless", "--import", project.GodotConfigPath())
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			glog.Debugf("%s %v", cmd.Path, cmd.Args)
 
-		err = cmd.Run()
-		if err != nil {
-			r.Errorf("Import failed, aborting.")
-			return
+			err = cmd.Run()
+			if err != nil {
+				r.Errorf("Import failed, aborting.")
+				return
+			}
 		}
 
 		glog.Info("Starting exports...")

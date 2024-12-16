@@ -145,11 +145,17 @@ func (g *Official) ExportTemplatesURL() string {
 	return g.DownloadURL(nil) + "export_templates.tpz"
 }
 
-func (g *Official) ExportTemplatesPath() string {
+func ExportTemplatesRoot() string {
 	return filepath.Join(
 		xdg.DataHome,
 		"godot",
 		"export_templates",
+	)
+}
+
+func (g *Official) ExportTemplatesPath() string {
+	return filepath.Join(
+		ExportTemplatesRoot(),
 		g.StringEx(true, true, true),
 	)
 }

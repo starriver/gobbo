@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gosimple/slug"
+	"github.com/starriver/gobbo/pkg/godot"
 	"github.com/starriver/gobbo/pkg/project"
 	"github.com/starriver/gobbo/pkg/store"
 )
@@ -25,6 +26,7 @@ type Service struct {
 	Image       string
 	Volumes     []Volume
 	Environment Environment
+	StopSignal  string `yaml:"stop_signal"`
 }
 
 type Volume struct {
@@ -140,7 +142,7 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 
 	godotSource := store.Join("bin", p.Godot.BinaryPath(&store.Platform))
 	godotTarget := "/opt/godot-" + p.Godot.String()
-	exportTemplateSource := p.Godot.ExportTemplatesPath()
+	exportTemplateSource := godot.ExportTemplatesRoot()
 
 	// Start by creating a prospective service per preset.
 
@@ -174,6 +176,9 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 		if !slices.Contains(presetNames, pr.Name) {
 			continue
 		}
+
+		// slugProject := slug.Make(p.Name)
+		slugPreset := slug.Make(pr.Name)
 
 		s := Service{}
 		s.Image = Tag
@@ -238,7 +243,11 @@ func Configure(store *store.Store, p *project.Project, debug bool, filter []stri
 			Zip:                  zip,
 		}
 
-		presetServices[slug.Make(pr.Name)] = s
+		// There's no point in waiting for Godot to clean up if we Ctrl-C the
+		// exports, so:
+		s.StopSignal = "SIGKILL"
+
+		presetServices[slugPreset] = s
 	}
 
 	// At this point, we have everything we need for a no-variants config.
