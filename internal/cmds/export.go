@@ -3,6 +3,7 @@ package cmds
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/starriver/charli"
 	"github.com/starriver/gobbo/internal/opts"
@@ -15,18 +16,22 @@ const exportDesc = `
 Builds project exports in parallel using Docker containers. All exports are
 built unless {EXPORT}s are specified.
 
-Gobbo builds its own Docker image for the containers, tagged {_gobbo:base}. You
-can provide your own by creating a Dockerfile in your project's root directory,
-which will tag the image {_gobbo:HASH}, where {HASH} is a hash of your project
-path.
-
-Use '{FROM _gobbo:base}' in your Dockerfile to ensure you have all of the
-prerequisite dependencies available (unless you know what you're doing!). Note
-that Godot will be bind-mounted into the build containers, so there's no need
-to install it in your Dockerfile.
-
 Docker Compose is required, and the Docker CLI must be in your {PATH}. If not,
 the command will fail.
+
+Before exporting, various prerequisites are ensured:
+- Export templates are installed, if they aren't already.
+- A Docker image for the exports is built.
+- Project imports are run.
+
+Gobbo builds its own Docker image for the containers, using the
+{starriver.run/gobbo} tag. You can provide your own image by creating a
+Dockerfile in your project's root directory.
+
+Use '{FROM starriver.run/gobbo:latest}' in your Dockerfile to ensure you have
+all of the prerequisite dependencies available (unless you know what you're
+doing!). Note that Godot will be bind-mounted into the build containers, so
+there's no need to install it in your Dockerfile.
 `
 
 var Export = charli.Command{
@@ -145,6 +150,45 @@ var Export = charli.Command{
 		}
 
 		glog.Info("Starting exports...")
-		export.Run(c)
+		err = export.Run(c)
+		if err != nil {
+			r.Error(err)
+			return
+		}
+
+		if project.Export.Zip {
+			// If we're zipping, dist subdirectories will all have just a single
+			// file - move them up for convenience.
+
+			zips := make([]string, 0, len(c.Services))
+			err := filepath.WalkDir(project.Export.Dist, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if !d.IsDir() && filepath.Ext(path) == ".zip" {
+					zips = append(zips, path)
+				}
+				return nil
+			})
+
+			if err != nil {
+				glog.Warnf("Couldn't walk '%s': %v", project.Export.Dist, err)
+			} else {
+				for _, z := range zips {
+					dir := filepath.Dir(z)
+					err = os.Rename(z, filepath.Dir(dir))
+					if err != nil {
+						glog.Warnf("Couldn't move '%s' up: %v", z, err)
+						continue
+					}
+
+					err = os.Remove(dir)
+					if err != nil {
+						glog.Warnf("Couldn't remove directory '%s': %v", dir, err)
+					}
+				}
+			}
+		}
 	},
 }
