@@ -1,11 +1,10 @@
 package project
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -205,68 +204,24 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 	// ---
 	// Now we start reading Godot config from src.
 
-	// Get project version from project.godot
-	configPath := p.GodotConfigPath()
-	f, err = os.Open(configPath)
+	// Query the Godot project config
+	gcPath := p.GodotConfigPath()
+	gc, err := godot.Query(gcPath, godot.Q{
+		"application": {
+			"config/name",
+			"config/version",
+		},
+	})
 	if err != nil {
-		pushErrorf("couldn't open '%s': %v", configPath, err)
+		pushErrorf("couldn't load '%s': %v", gcPath, err)
 	} else {
-		defer f.Close()
-
-		s := bufio.NewScanner(f)
-		appSection := false
-
-		const name = 1
-		const version = 2
-		want := name | version
-
-		p.Name = "untitled"
-		p.Version = "unspecified"
-
-		for s.Scan() {
-			if want == 0 {
-				break
-			}
-
-			t := s.Text()
-			if (len(t) == 0) || (t[0] == ';') {
-				continue
-			}
-
-			if appSection {
-				if t[0] == '[' {
-					// Starting another section - don't bother scanning further.
-					break
-				}
-
-				if ((want & name) != 0) && strings.HasPrefix(t, "config/name=\"") {
-					from := strings.Index(t, "\"") + 1
-					to := strings.LastIndex(t, "\"")
-					v := t[from:to]
-					if v != "" {
-						p.Name = v
-					}
-					want ^= name
-					continue
-				}
-
-				if ((want & version) != 0) && strings.HasPrefix(t, "config/version=\"") {
-					from := strings.Index(t, "\"") + 1
-					to := strings.LastIndex(t, "\"")
-					v := t[from:to]
-					if v != "" {
-						p.Version = v
-					}
-					want ^= version
-					continue
-				}
-			} else if t == "[application]" {
-				appSection = true
-			}
-		}
+		// Must exist:
+		app := gc["application"]
+		p.Name, _ = app["config/name"]
+		p.Version, _ = app["config/version"]
 	}
 
-	// Get export presets
+	// Query export presets
 	epPath := p.ExportPresetsPath()
 	presetMap := map[string]bool{}
 
@@ -277,66 +232,32 @@ func Load(path string, ignoreStream bool) (p *Project, errs []error) {
 		}
 		// Else, export_presets.cfg doesn't exist, so no presets are defined.
 	} else {
-		f, err := os.Open(epPath)
+		// export_presets.cfg exists, load it:
+		ep, err := godot.Query(epPath, godot.Q{
+			"presets.*": {
+				"name",
+				"platform",
+			},
+		})
 		if err != nil {
-			pushErrorf("couldn't open '%s': %v", configPath, err)
+			pushErrorf("couldn't load '%s': %v", epPath, err)
 		} else {
-			defer f.Close()
-
-			sectionRe := regexp.MustCompile("^\\[preset\\.[0-9]+\\]$")
-
-			s := bufio.NewScanner(f)
-
-			// Cheeky bitfield
-			want := 0
-			const name = 1
-			const platform = 2
-
-			preset := Preset{}
-
-			pushPreset := func() {
-				if want == 0 {
-					p.Export.Presets = append(p.Export.Presets, preset)
-				}
+			presets := make([]Preset, len(ep))
+			i := 0
+			for _, pr := range ep {
+				presets[i].Name, _ = pr["name"]
+				presets[i].Platform, _ = pr["platform"]
+				i++
 			}
-
-			for s.Scan() {
-				t := s.Text()
-				if (len(t) == 0) || (t[0] == ';') {
-					continue
+			slices.SortFunc(presets, func(a, b Preset) int {
+				if a.Name < b.Name {
+					return -1
+				} else if a.Name > b.Name {
+					return 1
 				}
-
-				if ((want & name) != 0) && strings.HasPrefix(t, "name=\"") {
-					from := strings.Index(t, "\"") + 1
-					to := strings.LastIndex(t, "\"")
-					v := t[from:to]
-					if v != "" {
-						preset.Name = v
-						presetMap[v] = true
-						want ^= name
-						pushPreset()
-						continue
-					}
-				}
-
-				if ((want & platform) != 0) && strings.HasPrefix(t, "platform=\"") {
-					from := strings.Index(t, "\"") + 1
-					to := strings.LastIndex(t, "\"")
-					v := t[from:to]
-					if v != "" {
-						preset.Platform = v
-						want ^= platform
-						pushPreset()
-						continue
-					}
-				}
-
-				// Are we starting a [preset.*] section?
-				if sectionRe.MatchString(t) {
-					want = name | platform
-					preset = Preset{}
-				}
-			}
+				return 0
+			})
+			p.Export.Presets = presets
 		}
 	}
 

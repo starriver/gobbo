@@ -17,6 +17,7 @@ only = []
 dist = "dist"
 zip = false
 volumes = []
+mount_secrets = false
 scripts.pre = ""
 scripts.post = ""
 
@@ -39,6 +40,7 @@ This configures the Gobbo exporter. You should still set up your export presets 
 - `dist` is the path of the finished exports. When exporting, it will be created if it doesn't exist.
 - `zip` automatically zips all exports if true. Otherwise, exports will be in `dist` subdirectories.
 - `volumes` allows for [short-form Docker volumes](https://docs.docker.com/reference/cli/docker/container/run/#volume) to be mounted for all build containers. Currently, only the `z`, `Z` and `ro` flags are supported.
+- `mount_secrets` will mount configured secrets (from your editor & export configs) into the build containers. This is necessary for Android exports to work: your keystores will be mounted, and their usernames & passwords will be configured. Currently, this doesn't affect any other platform.
 - `scripts.*` specifies Bash script hooks to be executed before (`pre`) and after (`post`) the Godot export has executed.
 
 #### Variants
@@ -60,7 +62,7 @@ For example, to produce a matrix of builds for Itch and Steam:
 
 [export.steam]
 only = ["windows", "macos", "linux"]
-volumes = { "./steam" = "/opt/steam" }
+volumes = ["./steam:/opt/steam:ro"]
 scripts = {
 	pre = "/opt/steam/prepare.sh"
 	post = "/opt/steam/finalise.sh"
