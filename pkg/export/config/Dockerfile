@@ -57,6 +57,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 COPY --from=android /opt/android-sdk /opt/android-sdk
 COPY --from=rcedit /opt/rcedit.exe /opt/rcedit.exe
 
+ENV GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/srv/android/debug.keystore
+ENV GODOT_ANDROID_KEYSTORE_RELEASE_PATH=/srv/android/release.keystore
+
 COPY command.sh /opt/command.sh
 COPY editor_settings.tres /opt/editor_settings.tres
 
